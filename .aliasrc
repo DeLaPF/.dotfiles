@@ -1,0 +1,9 @@
+# Basic
+alias ll="ls -la"
+
+# Tmux
+alias tm="tmux"
+alias tma="tmux attach"
+
+# NeoVim
+alias vim="nvim"

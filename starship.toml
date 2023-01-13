@@ -1,0 +1,56 @@
+format = """\
+  $username\
+  $hostname\
+  $directory\
+  $git_branch\
+  $git_commit\
+  $git_status\
+  $cmd_duration\
+  \n$character\
+  """
+
+right_format = """\
+  $jobs
+  """
+
+[username]
+#format = "[](fg:#88c0d0)[$user]($style)[](fg:#2e3440 bg:#88c0d0)"
+format = "[$user]($style)[](fg:#88c0d0 bg:#2e3440)"
+style_root = "bg:#88c0d0 fg:red"
+style_user = "bg:#88c0d0 fg:#2e3440"
+show_always = true
+
+[hostname]
+format = "[@](fg:#d8dee9 bg:#2e3440)[](fg:#2e3440 bg:#81a1c1)[$hostname]($style)[](fg:#81a1c1 bg:#2e3440)"
+ssh_only = false
+trim_at = "."
+style = "bg:#81a1c1 fg:#2e3440"
+
+[directory]
+style = "fg:#d8dee9 bg:#2e3440"
+format = "[ $path]($style)[](fg:#2e3440)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[git_commit]
+commit_hash_length = 8
+style = "bold white"
+
+[git_status]
+style = "bright-white"
+format = "$all_status$ahead_behind"
+
+[jobs]
+format = "[$symbol $number]($style)"
+style = "fg:#88c0d0"
+
+[character]
+success_symbol = "[❯](bold fg:#88c0d0)"
+error_symbol = "[✖](bold red) "
+
+# WHITE="#d8dee9"
+# BLACK="#2e3440"
+# BRIGHT_BLACK="#4c566a"
+# BLUE="#88c0d0"
+# DARK_BLUE="#5e81ac"
+# CYAN="#81a1c1"
