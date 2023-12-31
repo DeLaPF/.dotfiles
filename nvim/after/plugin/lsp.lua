@@ -1,7 +1,6 @@
-local lsp = require('lsp-zero')
-lsp.preset('recommended')
-
-lsp.on_attach(function(client, bufnr)
+local lsp_zero = require('lsp-zero')
+lsp_zero.preset('recommended')
+lsp_zero.on_attach(function(client, bufnr)
 	local opts = {buffer = bufnr, remap = false}
 
 	vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
@@ -15,5 +14,31 @@ lsp.on_attach(function(client, bufnr)
 	vim.keymap.set("n", "<leader>vrn", vim.lsp.buf.rename, opts)
 	vim.keymap.set("i", "<leader>?", vim.lsp.buf.signature_help, opts)
 end)
+lsp_zero.setup({})
 
-lsp.setup()
+local cmp = require('cmp')
+local cmp_action = require('lsp-zero').cmp_action()
+local cmp_format = require('lsp-zero').cmp_format()
+
+cmp.setup({
+    sources = {
+        {name = 'nvim_lsp'},
+        {name = 'buffer'},
+    },
+    mapping = cmp.mapping.preset.insert({
+        ['<CR>'] = cmp.mapping.confirm({select = false}),
+        ['<Tab>'] = cmp_action.tab_complete(),
+        ['<S-Tab>'] = cmp_action.select_prev_or_fallback(),
+    }),
+
+    --- Show source name in completion menu
+    formatting = cmp_format,
+})
+
+require('mason').setup({})
+require('mason-lspconfig').setup({
+    ensure_installed = {},
+    handlers = {
+        lsp_zero.default_setup,
+    },
+})

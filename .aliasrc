@@ -3,7 +3,9 @@ alias ll="ls -la"
 
 # Tmux
 alias tm="tmux"
+alias tml="tmux ls"
 alias tma="tmux attach"
+alias tmat="tmux attach -t"
 
 # NeoVim
 alias vim="nvim"
