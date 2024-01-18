@@ -9,15 +9,25 @@ require('nvim-tree').setup({
     sort = { sorter = 'case_sensitive' },
     view = { width = 30 },
     renderer = { group_empty = true },
-})
+    on_attach = function(bufnr)
+        local api = require('nvim-tree.api')
 
-local api = require('nvim-tree.api')
-vim.keymap.set('n', '<leader>pv', function()
-    api.tree.toggle({
-        find_file = true,
-        focus = true,
-    })
-end)
-vim.keymap.set('n', '+', api.tree.change_root_to_node)
-vim.keymap.set('n', '_', api.tree.change_root_to_parent)
--- TODO set '-' to focus parent dir in tree
+        local function opts(desc)
+            return { desc = 'nvim-tree: ' .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
+        end
+
+        -- default mappings
+        api.config.mappings.default_on_attach(bufnr)
+
+        -- custom mappings
+        vim.keymap.set('n', '<leader>pv', function()
+            api.tree.toggle({ find_file = true, focus = true })
+        end)
+        vim.keymap.set('n', '+', api.tree.change_root_to_node, opts('Move root to current'))
+        vim.keymap.set('n', '_', api.tree.change_root_to_parent, opts('Move root to parent'))
+        vim.keymap.set('n', '-', api.node.navigate.parent, opts('Focus parent'))
+        -- vim.keymap.set('n', '<CR>', api.node.open.replace_tree_buffer, opts('Open: in place'))
+        -- vim.keymap.set('n', '<leader><CR>', api.node.open.tab, opts('Open: new tab'))
+        -- vim.keymap.set('n', '?', api.tree.toggle_help, opts('Help'))
+    end,
+})
