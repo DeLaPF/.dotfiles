@@ -1,30 +1,40 @@
--- This file can be loaded by calling `lua require('plugins')` from your init.vim
+local ensure_packer = function()
+    local fn = vim.fn
+    local install_path = fn.stdpath('data')..'/site/pack/packer/start/packer.nvim'
+    if fn.empty(fn.glob(install_path)) > 0 then
+        fn.system({ 'git', 'clone', '--depth', '1', 'https://github.com/wbthomason/packer.nvim', install_path })
+        -- Only required if you have packer configured as `opt`
+        vim.cmd [[packadd packer.nvim]]
+        return true
+    end
+    return false
+end
 
--- Only required if you have packer configured as `opt`
-vim.cmd [[packadd packer.nvim]]
-
+local packer_bootstrap = ensure_packer()
 return require('packer').startup(function(use)
 	-- Packer can manage itself
-	use 'wbthomason/packer.nvim'
+	use('wbthomason/packer.nvim')
 
-	use {
-		'nvim-telescope/telescope.nvim', tag = '0.1.0',
+	use({
+		'nvim-telescope/telescope.nvim', tag = '0.1.5',
 		-- or                            , branch = '0.1.x',
 		requires = { {'nvim-lua/plenary.nvim'} }
-	}
+	})
 
-	use { 
+    use({
+        'nvim-tree/nvim-tree.lua',
+        requires = {
+            'nvim-tree/nvim-web-devicons', -- optional
+        },
+    })
+
+	use({
 		'olivercederborg/poimandres.nvim',
 		as = 'poimandres',
 		config = function()
-			require('poimandres').setup {
-				-- leave this setup function empty for default config
-				-- or refer to the configuration section
-				-- for configuration options
-			}
 			vim.cmd('colorscheme poimandres')
 		end
-	}
+	})
 	use({
 		'rose-pine/neovim',
 		as = 'rose-pine',
@@ -37,7 +47,7 @@ return require('packer').startup(function(use)
 	use('theprimeagen/harpoon')
 	use('mbbill/undotree')
 
-	use {
+	use({
 		'VonHeikemen/lsp-zero.nvim',
 		requires = {
 			-- LSP Support
@@ -58,6 +68,9 @@ return require('packer').startup(function(use)
 			-- Snippet Collection (Optional)
 			{'rafamadriz/friendly-snippets'},
 		}
-	}
+	})
 
+    if packer_bootstrap then
+        require('packer').sync()
+    end
 end)

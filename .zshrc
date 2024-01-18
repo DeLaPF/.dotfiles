@@ -52,6 +52,10 @@ bindkey '^[e' edit-command-line
 # Load aliases if exist
 [ -f "$HOME/.config/.aliasrc" ] && source "$HOME/.config/.aliasrc"
 
+# Load scripts if exist
+# [ -d "$HOME/.scripts" ] && for f in $HOME/.scripts/*; do source $f; done
+[ -n "$(ls -A $HOME/.scripts 2>/dev/null)" ] && for f in $HOME/.scripts/*; do source $f; done
+
 # Load nvm
 [ -d "/usr/local/nvm" ] && source /usr/local/nvm/nvm.sh
 

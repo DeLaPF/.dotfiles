@@ -16,6 +16,17 @@ lsp_zero.on_attach(function(client, bufnr)
 end)
 lsp_zero.setup({})
 
+require('mason').setup({})
+require('mason-lspconfig').setup({
+    ensure_installed = {},
+    handlers = {
+        lsp_zero.default_setup,
+    },
+})
+
+-- Additional lsp setup
+-- require('lspconfig').gopls.setup({})
+
 local cmp = require('cmp')
 local cmp_action = require('lsp-zero').cmp_action()
 local cmp_format = require('lsp-zero').cmp_format()
@@ -33,12 +44,4 @@ cmp.setup({
 
     --- Show source name in completion menu
     formatting = cmp_format,
-})
-
-require('mason').setup({})
-require('mason-lspconfig').setup({
-    ensure_installed = {},
-    handlers = {
-        lsp_zero.default_setup,
-    },
 })
