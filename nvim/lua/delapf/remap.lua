@@ -23,6 +23,19 @@ vim.keymap.set({"n", "v"}, "<leader>d", [["_d]])
 vim.keymap.set("n", "Q", "<nop>")
 vim.keymap.set("n", "<leader>f", vim.lsp.buf.format)
 
+vim.keymap.set("n", "<leader>qf", function()
+    local qf_exists = false
+    for _, win in pairs(vim.fn.getwininfo()) do
+        if win["quickfix"] == 1 then
+            qf_exists = true
+        end
+    end
+    if qf_exists then
+        vim.cmd "cclose"
+    else
+        vim.cmd "copen"
+    end
+end)
 vim.keymap.set("n", "<leader>l", "<cmd>cnext<CR>zz")
 vim.keymap.set("n", "<leader>h", "<cmd>cprev<CR>zz")
 vim.keymap.set("n", "<leader>k", "<cmd>lnext<CR>zz")
