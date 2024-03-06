@@ -50,7 +50,7 @@ autoload edit-command-line; zle -N edit-command-line
 bindkey '^[e' edit-command-line
 
 # Load aliases if exist
-[ -f "$HOME/.config/.aliasrc" ] && source "$HOME/.config/.aliasrc"
+[ -f "$HOME/.aliasrc" ] && source "$HOME/.aliasrc"
 
 # Load scripts if exist
 # [ -d "$HOME/.scripts" ] && for f in $HOME/.scripts/*; do source $f; done

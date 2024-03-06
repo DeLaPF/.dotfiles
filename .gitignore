@@ -1,8 +1,2 @@
 # Packer Generated Dir 
-/nvim/plugin/
-
-# Firebase?
-configstore/
-
-# unknown
-pulse/
+/**/nvim/plugin/
