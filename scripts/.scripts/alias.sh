@@ -2,7 +2,7 @@
 
 alias refr='refresh'
 function refresh() {
-    source ~.zshrc
+    source ~/.zshrc
 }
 
 # Docker
