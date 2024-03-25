@@ -10,8 +10,8 @@ lsp_zero.on_attach(function(client, bufnr)
 	vim.keymap.set("n", "<leader>vd", vim.diagnostic.open_float, opts)
 	vim.keymap.set("n", "[d", vim.diagnostic.goto_next, opts)
 	vim.keymap.set("n", "]d", vim.diagnostic.goto_prev, opts)
-	vim.keymap.set("n", "<leader>vca", vim.lsp.buf.code_action, opts)
-	vim.keymap.set("n", "<leader>vrn", vim.lsp.buf.rename, opts)
+	vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
+	vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
 	vim.keymap.set("i", "<leader>?", vim.lsp.buf.signature_help, opts)
 end)
 lsp_zero.setup({})
@@ -26,6 +26,17 @@ require('mason-lspconfig').setup({
 
 -- Additional lsp setup
 -- require('lspconfig').gopls.setup({})
+lsp_config = require('lspconfig')
+
+-- Dart
+lsp_config['dartls'].setup({
+    on_attach = on_attach,
+    settings = {
+        dart = {
+            analysisExcludedFolders = {},
+        },
+    },
+})
 
 local cmp = require('cmp')
 local cmp_action = require('lsp-zero').cmp_action()
@@ -45,3 +56,5 @@ cmp.setup({
     --- Show source name in completion menu
     formatting = cmp_format,
 })
+
+-- require('fidget').setup({})
