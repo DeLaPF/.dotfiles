@@ -41,5 +41,36 @@ vim.keymap.set("n", "<leader>h", "<cmd>cprev<CR>zz")
 vim.keymap.set("n", "<leader>k", "<cmd>lnext<CR>zz")
 vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz")
 
-vim.keymap.set("n", "<leader>s", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
+vim.keymap.set("n", "<leader>s", [[/\<<C-r><C-w>\><CR>]])
+vim.keymap.set("n", "<leader>/", "<cmd>set hls!<CR>")
+
+vim.keymap.set("n", "<leader>c", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
 vim.keymap.set("n", "<leader>x", "<cmd>!chmod +x %<CR>", { silent = true })
+vim.keymap.set("n", "<leader><leader>x", "<cmd>source %<CR>", { desc = "Execute the current file" })
+
+-- Set local settings for terminal buffers
+vim.api.nvim_create_autocmd("TermOpen", {
+    pattern = { "*" },
+    group = vim.api.nvim_create_augroup("custom-term-open", {}),
+    callback = function()
+        vim.opt_local.number = false
+        vim.opt_local.relativenumber = false
+        vim.opt_local.scrolloff = 0
+
+        if vim.opt.buftype:get() == "terminal" then
+            vim.cmd(":startinsert")
+        end
+    end,
+})
+
+-- Easily hit escape in terminal mode.
+vim.keymap.set("t", "<leader>jk", "<cmd>:q<CR>")
+
+-- Open a terminal at the bottom of the screen with a fixed height.
+vim.keymap.set("n", "<leader>o", function()
+    vim.cmd.new()
+    vim.cmd.wincmd "J"
+    vim.api.nvim_win_set_height(0, 12)
+    vim.wo.winfixheight = true
+    vim.cmd.term()
+end)
