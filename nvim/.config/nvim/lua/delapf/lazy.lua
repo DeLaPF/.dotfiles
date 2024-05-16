@@ -22,6 +22,10 @@ require('lazy').setup(
         dependencies = {'nvim-tree/nvim-web-devicons'}, -- optional
     },
     {
+        'stevearc/oil.nvim',
+        dependencies = { "nvim-tree/nvim-web-devicons" }, -- optional
+    },
+    {
         'rose-pine/neovim',
         name = 'rose-pine',
         lazy = false, -- load during startup

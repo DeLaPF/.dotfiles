@@ -46,6 +46,7 @@ vim.keymap.set('n', '<leader>tr', builtin.resume)
 
 function Cwd()
     local buf_dir = utils.buffer_dir()
+    -- TODO: make work with oil as well
     local lib = require('nvim-tree.lib')
     if not lib then
         return buf_dir
