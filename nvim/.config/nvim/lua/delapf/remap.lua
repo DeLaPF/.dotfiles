@@ -44,6 +44,14 @@ vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz")
 vim.keymap.set("n", "<leader>s", [[/\<<C-r><C-w>\><CR>]])
 vim.keymap.set("n", "<leader>/", "<cmd>set hls!<CR>")
 
+vim.keymap.set("n", "<leader><CR>", function()
+    if (vim.v.count ~= 0) then
+        return "G"
+    else
+        return "<CR>"
+    end
+end, { expr = true })
+
 vim.keymap.set("n", "<leader>c", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
 vim.keymap.set("n", "<leader>x", "<cmd>!chmod +x %<CR>", { silent = true })
 vim.keymap.set("n", "<leader><leader>x", "<cmd>source %<CR>", { desc = "Execute the current file" })
