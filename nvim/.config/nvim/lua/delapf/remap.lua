@@ -44,7 +44,10 @@ vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz")
 vim.keymap.set("n", "<leader>s", [[/\<<C-r><C-w>\><CR>]])
 vim.keymap.set("n", "<leader>/", "<cmd>set hls!<CR>")
 
-vim.keymap.set("n", "<leader><CR>", function()
+vim.keymap.set("n", "_", "<C-o>zz")
+vim.keymap.set("n", "+", "<C-i>zz")
+
+vim.keymap.set("n", "<CR>", function()
     if (vim.v.count ~= 0) then
         return "G"
     else
@@ -72,7 +75,7 @@ vim.api.nvim_create_autocmd("TermOpen", {
 })
 
 -- Easily hit escape in terminal mode.
-vim.keymap.set("t", "jk", "<c-\\><c-n>")
+vim.keymap.set("t", "<esc>", "<c-\\><c-n>")
 vim.keymap.set("t", "<leader>jk", "<cmd>:q<CR>")
 
 -- Open a terminal at the bottom of the screen with a fixed height.

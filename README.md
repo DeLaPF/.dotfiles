@@ -19,3 +19,4 @@ If cloned elsewhere:
 ### Selecting Text
 Rather than disabling mouse functionality for tmux and neovim,
 Shift (regular) or Shift + Alt (box) can be use to select and copy text to the host's clipboard
+Sadly does not work properly on Mac, so I must disable

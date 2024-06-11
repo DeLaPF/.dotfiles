@@ -1,3 +1,6 @@
+# Load cargo env if exist
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
+
 # Use Starship For Prompt (may switch to PS1 in the future)
 eval "$(starship init zsh)"
 

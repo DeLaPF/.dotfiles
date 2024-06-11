@@ -10,6 +10,8 @@ vim.opt.smartindent = true
 
 vim.opt.wrap = false
 
+vim.opt.mouse = ""
+
 vim.opt.swapfile = false
 vim.opt.backup = false
 vim.opt.undodir = os.getenv("HOME") .. "/.cache/vim/undodir"
