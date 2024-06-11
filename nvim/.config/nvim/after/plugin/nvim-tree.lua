@@ -24,9 +24,9 @@ require('nvim-tree').setup({
         vim.keymap.set('n', '+', api.tree.change_root_to_node, opts('Move root to current'))
         vim.keymap.set('n', '_', api.tree.change_root_to_parent, opts('Move root to parent'))
         vim.keymap.set('n', '-', api.node.navigate.parent, opts('Focus parent'))
-        -- vim.keymap.set('n', '<CR>', api.node.open.replace_tree_buffer, opts('Open: in place'))
-        -- vim.keymap.set('n', '<leader><CR>', api.node.open.tab, opts('Open: new tab'))
-        -- vim.keymap.set('n', '?', api.tree.toggle_help, opts('Help'))
+        vim.keymap.set('n', '<CR>', api.node.open.replace_tree_buffer, opts('Open: in place'))
+        vim.keymap.set('n', '<leader><CR>', api.node.open.tab, opts('Open: new tab'))
+        vim.keymap.set('n', '?', api.tree.toggle_help, opts('Help'))
     end,
 })
 
