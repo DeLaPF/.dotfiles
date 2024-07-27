@@ -1,4 +1,5 @@
 require('delapf.remap')
 require('delapf.set')
 require('delapf.lazy')
+require('delapf.usercommands')
 -- require('delapf.packer')

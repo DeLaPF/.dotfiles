@@ -55,11 +55,11 @@ bindkey '^[e' edit-command-line
 
 # Load aliases if exist
 [ -f "$HOME/.aliasrc" ] && source "$HOME/.aliasrc"
+# Load additional rc (run commands) config if exist (TODO: replace add_env)
+[ -f "$HOME/.addrc" ] && source "$HOME/.addrc"
 # Load additional environment vars if exist
 [ -f "$HOME/.add_env" ] && source "$HOME/.add_env"
-
 # Load scripts if exist
-# [ -d "$HOME/.scripts" ] && for f in $HOME/.scripts/*; do source $f; done
 [ -n "$(ls -A $HOME/.scripts 2>/dev/null)" ] && for f in $HOME/.scripts/*; do source $f; done
 
 # Load nvm

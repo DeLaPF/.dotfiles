@@ -9,3 +9,7 @@ function gcb() {
 function grs() {
     git reflog show --pretty=format:'%gs ~ %gd' --date=relative | grep 'checkout:' | grep -oE '[^ ]* ~ .*' | awk -F~ '!seen[$1]++' | awk -F' ~ HEAD@{' '{printf(" \033[33m%s: \033[37m %s\033[0m\n", substr($2, 1, length($2)-1), $1)}'
 }
+
+function gpo() {
+    git $1 push -u origin $(git rev-parse --abbrev-ref HEAD)
+}
