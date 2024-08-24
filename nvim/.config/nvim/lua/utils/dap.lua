@@ -6,14 +6,14 @@ M.add_config = function(
 )
     program = vim.fn.expand(vim.fn.trim(program), true)
     M.default_args[name] = default_args
-    new_config = {
+    local new_config = {
         name = name,
         type = adapter_type,
         program = program,
         request = request,
         console = 'integratedTerminal',
         args = function()
-            local default_args = M.default_args[name] or {}
+            default_args = M.default_args[name] or {}
             local prev_args = M.prev_args[name] or {}
             local new_args = {}
             -- if next(prev_args) ~= nil then  -- prev is not empty
@@ -35,7 +35,7 @@ M.add_config = function(
                 new_args = vim.split(args_string, ' +')
             end
             M.prev_args[name] = new_args
-            merged = vim.fn.extend(default_args, new_args)
+            local merged = vim.fn.extend(default_args, new_args)
             print('Running: ' .. program .. ' ' .. table.concat(merged, ' '))
             return merged
         end,

@@ -1,9 +1,9 @@
-function set_quit_noname()
+local function set_quit_noname()
     vim.keymap.set('n', 'q',
         function()
             local bufnr = vim.api.nvim_get_current_buf()
             if vim.api.nvim_buf_get_name(bufnr) == '' then
-                vim.api.nvim_exec([[:q]], true)
+                vim.cmd('q')
             else
                 vim.keymap.set('n', 'q', 'q')
             end

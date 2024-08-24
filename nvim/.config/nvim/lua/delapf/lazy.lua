@@ -90,8 +90,8 @@ local plugins = core
 if vim.fn.empty(dev_plugins) ~= 1 then
     for _, v in ipairs(dev_plugins) do
         if (
-            vim.fn.isdirectory(vim.fn.expand(v['import'])) ~= 0 or
-            vim.fn.isdirectory(vim.fn.expand(v['dir'])) ~= 0
+            vim.fn.isdirectory(vim.fn.expand(v['import'])) == 1 or
+            vim.fn.isdirectory(vim.fn.expand(v['dir'])) == 1
         ) then
             table.insert(plugins, v)
         end
