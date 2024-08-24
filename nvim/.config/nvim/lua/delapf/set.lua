@@ -32,5 +32,8 @@ vim.opt.updatetime = 50
 
 vim.opt.colorcolumn = "80"
 
+-- Single most useful setting for editing cmd
+vim.opt.cedit = "<TAB>"
+
 -- Don't have `o` add a comment
 vim.opt.formatoptions:remove "o"
