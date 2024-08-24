@@ -11,8 +11,7 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
-require('lazy').setup(
-{
+local core = {
     {
         'nvim-telescope/telescope.nvim', tag = '0.1.5', -- or: branch = '0.1.x'
         dependencies = {'nvim-lua/plenary.nvim'},
@@ -23,7 +22,7 @@ require('lazy').setup(
     },
     {
         'stevearc/oil.nvim',
-        dependencies = { "nvim-tree/nvim-web-devicons" }, -- optional
+        dependencies = { 'nvim-tree/nvim-web-devicons' }, -- optional
     },
     {
         'rose-pine/neovim',
@@ -74,6 +73,21 @@ require('lazy').setup(
             {'rafamadriz/friendly-snippets'},
         }
     },
-},
-{}
-)
+}
+local dev_plugins = {
+    { dir = '~/dev/neovim/plugins/locr' },  -- plugins in development
+}
+
+local plugins = core
+if vim.fn.empty(dev_plugins) ~= 1 then
+    for _, v in ipairs(dev_plugins) do
+        if (
+            vim.fn.isdirectory(vim.fn.expand(v['import'])) ~= 0 or
+            vim.fn.isdirectory(vim.fn.expand(v['dir'])) ~= 0
+        ) then
+            table.insert(plugins, v)
+        end
+    end
+end
+
+require('lazy').setup(plugins, {})

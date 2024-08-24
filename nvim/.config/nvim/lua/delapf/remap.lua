@@ -44,6 +44,9 @@ vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz")
 vim.keymap.set("n", "<leader>s", [[/\<<C-r><C-w>\><CR>]])
 vim.keymap.set("n", "<leader>/", "<cmd>set hls!<CR>")
 
+-- Testing
+vim.keymap.set("n", "<leader>T", "<Plug>PlenaryTestFile")
+
 vim.keymap.set("n", "_", "<C-o>zz")
 vim.keymap.set("n", "+", "<C-i>zz")
 
