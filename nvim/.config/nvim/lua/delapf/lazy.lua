@@ -57,7 +57,6 @@ local core = {
                 build = ':MasonUpdate',
             },
             {'williamboman/mason-lspconfig.nvim'},
-            {'j-hui/fidget.nvim', tag = 'legacy'}, -- loading widget
 
             -- Autocompletion
             {'hrsh7th/nvim-cmp'},

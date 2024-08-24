@@ -18,7 +18,10 @@ lsp_zero.setup({})
 
 require('mason').setup({})
 require('mason-lspconfig').setup({
-    ensure_installed = {},
+    ensure_installed = {
+        'pyright',
+        'lua_ls',
+    },
     handlers = {
         lsp_zero.default_setup,
     },
@@ -26,11 +29,43 @@ require('mason-lspconfig').setup({
 
 -- Additional lsp setup
 -- require('lspconfig').gopls.setup({})
-lsp_config = require('lspconfig')
+local lsp_config = require('lspconfig')
+
+-- Lua (copied from neovim-lspconfig/doc/server_configurations.md)
+lsp_config['lua_ls'].setup({
+    on_init = function(client)
+        local path = client.workspace_folders[1].name
+        if (vim.uv or vim.loop).fs_stat(path..'/.luarc.json') or (vim.uv or vim.loop).fs_stat(path..'/.luarc.jsonc') then
+            return
+        end
+
+        client.config.settings.Lua = vim.tbl_deep_extend('force', client.config.settings.Lua, {
+            runtime = {
+                -- Tell the language server which version of Lua you're using
+                -- (most likely LuaJIT in the case of Neovim)
+                version = 'LuaJIT'
+            },
+            -- Make the server aware of Neovim runtime files
+            workspace = {
+                checkThirdParty = false,
+                library = {
+                    vim.env.VIMRUNTIME,
+                    -- Depending on the usage, you might want to add additional paths here.
+                    "${3rd}/luv/library",  -- fixes fs_stat warning
+                    -- "${3rd}/busted/library",
+                }
+                -- or pull in all of 'runtimepath'. NOTE: this is a lot slower
+                -- library = vim.api.nvim_get_runtime_file("", true)
+            }
+        })
+    end,
+    settings = {
+        Lua = {}
+    }
+})
 
 -- Dart
 lsp_config['dartls'].setup({
-    on_attach = on_attach,
     settings = {
         dart = {
             analysisExcludedFolders = {},
@@ -56,5 +91,3 @@ cmp.setup({
     --- Show source name in completion menu
     formatting = cmp_format,
 })
-
--- require('fidget').setup({})

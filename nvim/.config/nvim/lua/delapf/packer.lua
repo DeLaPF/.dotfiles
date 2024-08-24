@@ -54,7 +54,6 @@ return require('packer').startup(function(use)
             {'neovim/nvim-lspconfig'},
             {'williamboman/mason.nvim'},
             {'williamboman/mason-lspconfig.nvim'},
-            {'j-hui/fidget.nvim', tag = 'legacy'}, -- loading widget
 
             -- Autocompletion
             {'hrsh7th/nvim-cmp'},
