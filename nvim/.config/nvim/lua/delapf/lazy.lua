@@ -73,6 +73,15 @@ local core = {
             {'rafamadriz/friendly-snippets'},
         }
     },
+    {
+        'mfussenegger/nvim-dap',
+        dependencies = {
+            'rcarriga/nvim-dap-ui',
+            'theHamsta/nvim-dap-virtual-text',
+            'mfussenegger/nvim-dap-python',
+            'nvim-neotest/nvim-nio',
+        },
+    },
 }
 local dev_plugins = {
     { dir = '~/dev/neovim/plugins/locr' },  -- plugins in development
