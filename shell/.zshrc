@@ -1,6 +1,9 @@
 # Load cargo env if exist
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
 
+# Add bob to path (neovim)
+path+=("$HOME/.local/share/bob/nvim-bin")
+
 # Use Starship For Prompt (may switch to PS1 in the future)
 eval "$(starship init zsh)"
 
