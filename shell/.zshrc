@@ -2,6 +2,7 @@
 BREW_PATH="/opt/homebrew/bin"
 CARGO_ENV_PATH="$HOME/.cargo/env"
 BOB_NVIM_PATH="$HOME/.local/share/bob/nvim-bin"
+SCRIPTS_PATH="$HOME/.scripts"
 
 # Add homebrew to path if exists
 [ -d $BREW_PATH ] && path+=($BREW_PATH)
@@ -9,6 +10,8 @@ BOB_NVIM_PATH="$HOME/.local/share/bob/nvim-bin"
 [ -f $CARGO_ENV_PATH ] && source $CARGO_ENV_PATH
 # Add bob-nvim to path if exists
 [ -d $BOB_NVIM_PATH ] && path+=($BOB_NVIM_PATH)
+# Add .scripts to path if exists
+[ -d $SCRIPTS_PATH ] && path+=($SCRIPTS_PATH)
 export PATH
 
 # Use Starship For Prompt (may switch to PS1 in the future)
@@ -69,8 +72,8 @@ bindkey '^[e' edit-command-line
 [ -f "$HOME/.addrc" ] && source "$HOME/.addrc"
 # Load additional environment vars if exists
 [ -f "$HOME/.add_env" ] && source "$HOME/.add_env"
-# Load scripts if exists
-[ -n "$(ls -A $HOME/.scripts 2>/dev/null)" ] && for f in $HOME/.scripts/*; do source $f; done
+# Load sh_funcs if exists
+[ -n "$(ls -A $HOME/.sh_funcs 2>/dev/null)" ] && for f in $HOME/.sh_funcs/*; do source $f; done
 
 # Load nvm
 [ -d "/usr/local/nvm" ] && source /usr/local/nvm/nvm.sh

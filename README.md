@@ -8,9 +8,9 @@
 
 ## Setup
 For simplest setup clone to `$HOME/.dotfiles` (i.e. clone in `~` dir)
-- Run `stow nvim scripts shell` from repo root
-- To remove configs run `stow -D nvim scripts shell` from repo root
+- Run `stow nvim shell` from repo root
+- To remove configs run `stow -D nvim shell` from repo root
 
 If cloned elsewhere:
 - Run `stow -t $HOME nvim scripts shell` from repo root
-- To remove configs run `stow -Dt $HOME nvim scripts shell` from repo root
+- To remove configs run `stow -Dt $HOME nvim shell` from repo root
