@@ -1,8 +1,15 @@
-# Load cargo env if exist
-[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
+# Handle path
+BREW_PATH="/opt/homebrew/bin"
+CARGO_ENV_PATH="$HOME/.cargo/env"
+BOB_NVIM_PATH="$HOME/.local/share/bob/nvim-bin"
 
-# Add bob to path (neovim)
-path+=("$HOME/.local/share/bob/nvim-bin")
+# Add homebrew to path if exists
+[ -d BREW_PATH ] && path+=(BREW_PATH)
+# Load cargo env if exists
+[ -f CARGO_ENV_PATH ] && source CARGO_ENV_PATH
+# Add bob-nvim to path if exists
+[ -d BOB_NVIM_PATH ] && path+=(BOB_NVIM_PATH)
+export PATH
 
 # Use Starship For Prompt (may switch to PS1 in the future)
 eval "$(starship init zsh)"
@@ -56,13 +63,13 @@ preexec() { echo -ne '\e[5 q' ;} # Use beam shape cursor for each new prompt
 autoload edit-command-line; zle -N edit-command-line
 bindkey '^[e' edit-command-line
 
-# Load aliases if exist
+# Load aliases if exists
 [ -f "$HOME/.aliasrc" ] && source "$HOME/.aliasrc"
-# Load additional rc (run commands) config if exist (TODO: replace add_env)
+# Load additional rc (run commands) config if exists (TODO: replace add_env)
 [ -f "$HOME/.addrc" ] && source "$HOME/.addrc"
-# Load additional environment vars if exist
+# Load additional environment vars if exists
 [ -f "$HOME/.add_env" ] && source "$HOME/.add_env"
-# Load scripts if exist
+# Load scripts if exists
 [ -n "$(ls -A $HOME/.scripts 2>/dev/null)" ] && for f in $HOME/.scripts/*; do source $f; done
 
 # Load nvm
