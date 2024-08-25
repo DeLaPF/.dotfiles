@@ -4,11 +4,11 @@ CARGO_ENV_PATH="$HOME/.cargo/env"
 BOB_NVIM_PATH="$HOME/.local/share/bob/nvim-bin"
 
 # Add homebrew to path if exists
-[ -d BREW_PATH ] && path+=(BREW_PATH)
+[ -d $BREW_PATH ] && path+=($BREW_PATH)
 # Load cargo env if exists
-[ -f CARGO_ENV_PATH ] && source CARGO_ENV_PATH
+[ -f $CARGO_ENV_PATH ] && source $CARGO_ENV_PATH
 # Add bob-nvim to path if exists
-[ -d BOB_NVIM_PATH ] && path+=(BOB_NVIM_PATH)
+[ -d $BOB_NVIM_PATH ] && path+=($BOB_NVIM_PATH)
 export PATH
 
 # Use Starship For Prompt (may switch to PS1 in the future)
