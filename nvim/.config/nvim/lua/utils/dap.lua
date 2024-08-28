@@ -8,14 +8,22 @@ M.add_config = function(config, file_type, default_args)
     assert(M._valid_requests[config.request], string.format('invalid `request`: %s', config.request))
 
     local name = config.name
-    local program = config.program or '${file}'
-    program = vim.fn.expand(vim.fn.trim(config.program), true)
+    local program = nil
+    local exec_str = ''
     M._default_args[name] = default_args
+
+    if config.program then
+        exec_str = config.program
+        program = vim.fn.expand(vim.fn.trim(config.program), true)
+    end
+    if config.module then
+        exec_str = config.module
+    end
 
     local new_config = vim.tbl_deep_extend('keep', {
         name = name,
-        type = config.type,
         program = program,
+        type = config.type,
         request = config.request,
         console = config.console or 'integratedTerminal',
         args = config.args or function()
@@ -25,7 +33,7 @@ M.add_config = function(config, file_type, default_args)
             -- if next(prev_args) ~= nil then  -- prev is not empty
             if vim.fn.empty(prev_args) ~= 1 then
                 local res = vim.fn.input(
-                    'Run previous (Y/n): ' .. program .. ' ' ..
+                    'Run previous (Y/n): ' .. exec_str .. ' ' ..
                     table.concat(default_args, ' ') .. ' ' ..
                     table.concat(prev_args, ' ') .. ' '
                 )
@@ -35,14 +43,14 @@ M.add_config = function(config, file_type, default_args)
             end
             if vim.fn.empty(new_args) == 1 then
                 local args_string = vim.fn.input(
-                    program .. ' ' ..
+                    exec_str .. ' ' ..
                     table.concat(default_args, ' ') .. ' '
                 )
                 new_args = vim.split(args_string, ' +')
             end
-            M.prev_args[name] = new_args
+            M._prev_args[name] = new_args
             local merged = vim.fn.extend(default_args, new_args)
-            print('Running: ' .. program .. ' ' .. table.concat(merged, ' '))
+            print('Running: ' .. exec_str .. ' ' .. table.concat(merged, ' '))
             return merged
         end,
     }, config)
