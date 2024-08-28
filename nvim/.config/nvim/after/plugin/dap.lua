@@ -47,8 +47,8 @@ end, { expr = true })
 -- Auto open/close dapui
 dap.listeners.before.attach.dapui_config = ui.open
 dap.listeners.before.launch.dapui_config = ui.open
-dap.listeners.before.event_terminated.dapui_config = ui.close
-dap.listeners.before.event_exited.dapui_config = ui.close
+-- dap.listeners.before.event_terminated.dapui_config = ui.close
+-- dap.listeners.before.event_exited.dapui_config = ui.close
 
 dap.adapters.debugpy = {
     type = 'executable',
