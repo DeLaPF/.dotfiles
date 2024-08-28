@@ -30,7 +30,8 @@ M.add_config = function(config, file_type, default_args)
             default_args = M._default_args[name] or {}
             local prev_args = M._prev_args[name] or {}
             local new_args = {}
-            -- if next(prev_args) ~= nil then  -- prev is not empty
+            -- TODO: possibly make prev_args editable,
+            -- rather than having to redefine from scratch (helpful for mistakes)
             if vim.fn.empty(prev_args) ~= 1 then
                 local res = vim.fn.input(
                     'Run previous (Y/n): ' .. exec_str .. ' ' ..
