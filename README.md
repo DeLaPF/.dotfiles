@@ -17,35 +17,35 @@ If cloned elsewhere:
 
 ## Env and Dependencies
 ### Pre
-`sudo apt update`
+- `sudo apt update`
 
 ### GNU Stow (manage dotfiles)
-`sudo apt install -y stow`
+- `sudo apt install -y stow`
 
 ### Build Tools (to install (build) programs with cargo)
-`sudo apt install -y build-essential cmake`
+- `sudo apt install -y build-essential cmake`
 
 ### CLI Search
-`sudo apt install -y ripgrep`
+- `sudo apt install -y ripgrep`
 
 ### Tmux (Terminal multiplexer/window manager)
-`sudo apt install -y tmux`
-Install [plugin manager](https://github.com/tmux-plugins/tpm):
+- `sudo apt install -y tmux`
+- Install [plugin manager](https://github.com/tmux-plugins/tpm):
 `git clone https://github.com/tmux-plugins/tpm $HOME/.tmux/plugins/tpm`
 
 ### Zsh Highlighting (For "Fish-like" syntax hightlighting)
-Install [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)
+- Install [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting):
 `git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $HOME/.zsh/plugins/zsh-syntax-highlighting`
 
 ### Rust (Cargo)
-Install [rustup](https://www.rust-lang.org/tools/install)
+- Install [rustup](https://www.rust-lang.org/tools/install):
 `curl -sSf https://sh.rustup.rs | sh`
 
 ### Starship
-`cargo install starship`
+- `cargo install starship`
 
 ### Bob (neovim version manager)
-`cargo install bob-nvim`
+- `cargo install bob-nvim`
 
 ### Neovim
-`bob install stable && bob use stable`
+- `bob install stable && bob use stable`
