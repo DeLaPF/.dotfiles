@@ -52,7 +52,7 @@ If cloned elsewhere:
 
 ## Additional Env setup
 ### Go
-- Find <link> to correct version of [go](https://go.dev/dl/) (e.g. <link>=https://go.dev/dl/go1.23.3.linux-amd64.tar.gz)
+- Find link to correct version of [go](https://go.dev/dl/) (e.g. https://go.dev/dl/go1.23.3.linux-amd64.tar.gz)
 - Install go (in this case to local user, alternatively can [global install](https://go.dev/doc/install)):
 `curl -sL https://go.dev/dl/go1.23.3.linux-amd64.tar.gz | tar -C $HOME/.local/share -xzf -`
 
