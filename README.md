@@ -61,7 +61,7 @@ If cloned elsewhere:
 `curl -sS https://bootstrap.pypa.io/get-pip.py | python3`
 - Install [pyenv](https://github.com/pyenv/pyenv):
 `git clone https://github.com/pyenv/pyenv.git $HOME/.pyenv`
-- Setup env for pyenv [ref](https://github.com/pyenv/pyenv/wiki#suggested-build-environment)
+- Setup env for [pyenv](https://github.com/pyenv/pyenv/wiki#suggested-build-environment)
 (required to run `pyenv install x.x.x`):
 ```
 sudo apt update; sudo apt install build-essential libssl-dev zlib1g-dev \
