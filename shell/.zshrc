@@ -3,15 +3,25 @@ BREW_PATH="/opt/homebrew/bin"
 CARGO_ENV_PATH="$HOME/.cargo/env"
 BOB_NVIM_PATH="$HOME/.local/share/bob/nvim-bin"
 SCRIPTS_PATH="$HOME/.scripts"
+LOC_GO_PATH="$HOME/.local/share/go/bin"
+export PYENV_ROOT="$HOME/.pyenv"
+export NVM_DIR="$HOME/.nvm"
 
-# Add homebrew to path if exists
+# Add homebrew to path (if exists)
 [ -d $BREW_PATH ] && path+=($BREW_PATH)
-# Load cargo env if exists
+# Load cargo env (if exists)
 [ -f $CARGO_ENV_PATH ] && source $CARGO_ENV_PATH
-# Add bob-nvim to path if exists
+# Add bob-nvim to path (if exists)
 [ -d $BOB_NVIM_PATH ] && path+=($BOB_NVIM_PATH)
-# Add .scripts to path if exists
+# Add .scripts to path (if exists)
 [ -d $SCRIPTS_PATH ] && path+=($SCRIPTS_PATH)
+# Add go to path (if exists)
+[ -d $LOC_GO_PATH ] && path+=($LOC_GO_PATH)
+# Add pyenv to path (if exists)
+[ -d $PYENV_ROOT/bin ] && path+=("$PYENV_ROOT/bin")
+# Add nvm to path (if exists)
+[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+path+=($HOME/.local/bin)
 export PATH
 
 # Use Starship For Prompt (may switch to PS1 in the future)
@@ -66,17 +76,22 @@ preexec() { echo -ne '\e[5 q' ;} # Use beam shape cursor for each new prompt
 autoload edit-command-line; zle -N edit-command-line
 bindkey '^[e' edit-command-line
 
-# Load aliases if exists
+# Load aliases (if exists)
 [ -f "$HOME/.aliasrc" ] && source "$HOME/.aliasrc"
-# Load additional rc (run commands) config if exists (TODO: replace add_env)
+# Load additional rc (run commands) config (if exists) (TODO: replace add_env)
 [ -f "$HOME/.addrc" ] && source "$HOME/.addrc"
-# Load additional environment vars if exists
+# Load additional environment vars (if exists)
 [ -f "$HOME/.add_env" ] && source "$HOME/.add_env"
-# Load sh_funcs if exists
+# Load sh_funcs (if exists)
 [ -n "$(ls -A $HOME/.sh_funcs 2>/dev/null)" ] && for f in $HOME/.sh_funcs/*; do source $f; done
 
-# Load nvm
-[ -d "/usr/local/nvm" ] && source /usr/local/nvm/nvm.sh
+# Load pyenv (if exists)
+[ -d $PYENV_ROOT/bin ] && eval "$(pyenv init -)"
+[ -d $PYENV_ROOT/bin ] && eval "$(pyenv virtualenv-init -)"
 
-# Load zsh-syntax-highlighting; should be last.
-source ~/.zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh 2 > /dev/null
+# Load nvm completion (if exists)
+[ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"
+
+# Load zsh-syntax-highlighting (if exists); should be last.
+ZSH_PLUGIN_ROOT="$HOME/.zsh/plugins"
+[[ -d $ZSH_PLUGIN_ROOT/zsh-syntax-highlighting ]] && source "$ZSH_PLUGIN_ROOT/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" 2 > /dev/null
