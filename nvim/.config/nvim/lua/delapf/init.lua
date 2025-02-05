@@ -28,15 +28,3 @@ if vim.fn.empty(additional_dirs) ~= 1 then
         end
     end
 end
-
--- TODO: is there a way to make work without making global?
--- function Yank(text)
---     local escape = vim.fn.system('yank.sh', text)
---     if vim.v.shell_error ~= 0 then
---         error(escape)
---     else
---         vim.fn.writefile({escape}, '/dev/tty', 'b')
---     end
--- end
--- vim.keymap.set('n', '<leader>y', 'y:lua Yank(@0)<CR>')
--- TODO: is it possible to open a buffer, write the escape sequence, and then close it to copy to clipboard?
