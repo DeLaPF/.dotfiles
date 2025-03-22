@@ -87,3 +87,18 @@ libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-d
 `git clone https://github.com/nvm-sh/nvm.git $HOME/.nvm`
 - `nvm install stable && nvm use stable`
 - NOTE: neovim will complain about not being able to install pyright if missing npm
+
+### Java
+- Install [jenv](https://github.com/jenv/jenv):
+`git clone https://github.com/jenv/jenv.git ~/.jenv`
+- First time run: `jenv enable-plugin export`
+- Continue following to setup [jenv](https://github.com/jenv/jenv?tab=readme-ov-file#13-adding-your-java-environment)
+ - Notes:
+  - When using brew to install java, it will provide the correct symlink command in its output
+  - The provided `jenv add` command does not seem to work, use `jenv add /Library/Java/JavaVirtualMachines/openjdk.jdk/Contents/Home` (after symlinking) instead
+- Example for openjdk version 21:
+```
+brew install openjdk@21
+sudo ln -sfn /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-21.jdk
+jenv add /Library/Java/JavaVirtualMachines/openjdk-21.jdk/Contents/Home
+```

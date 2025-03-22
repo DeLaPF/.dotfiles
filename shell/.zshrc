@@ -3,7 +3,8 @@ BREW_PATH="/opt/homebrew/bin"
 CARGO_ENV_PATH="$HOME/.cargo/env"
 BOB_NVIM_PATH="$HOME/.local/share/bob/nvim-bin"
 SCRIPTS_PATH="$HOME/.scripts"
-LOC_GO_PATH="$HOME/.local/share/go/bin"
+LCL_GO_PATH="$HOME/.local/share/go/bin"
+JENV_ROOT="$HOME/.jenv"
 export PYENV_ROOT="$HOME/.pyenv"
 export NVM_DIR="$HOME/.nvm"
 
@@ -16,7 +17,9 @@ export NVM_DIR="$HOME/.nvm"
 # Add .scripts to path (if exists)
 [ -d $SCRIPTS_PATH ] && path+=($SCRIPTS_PATH)
 # Add go to path (if exists)
-[ -d $LOC_GO_PATH ] && path+=($LOC_GO_PATH)
+[ -d $LCL_GO_PATH ] && path+=($LCL_GO_PATH)
+# Add jenv to path (if exists)
+[ -d $JENV_ROOT/bin ] && path+=("$JENV_ROOT/bin")
 # Add pyenv to path (if exists)
 [ -d $PYENV_ROOT/bin ] && path+=("$PYENV_ROOT/bin")
 # Add nvm to path (if exists)
@@ -84,6 +87,9 @@ bindkey '^[e' edit-command-line
 [ -f "$HOME/.add_env" ] && source "$HOME/.add_env"
 # Load sh_funcs (if exists)
 [ -n "$(ls -A $HOME/.sh_funcs 2>/dev/null)" ] && for f in $HOME/.sh_funcs/*; do source $f; done
+
+# Load jenv (if exists)
+[ -d $JENV_ROOT/bin ] && eval "$(jenv init -)"
 
 # Load pyenv (if exists)
 [ -d $PYENV_ROOT/bin ] && eval "$(pyenv init -)"
