@@ -3,6 +3,7 @@
 #     path = ~/.add_gitconfig
 
 [alias]
-    cstash = "!git add -A && git commit -m \"CSTASH-ED ('git cpop' to un-stash)\""
+    cstash = "!git add -A && git commit --no-verify -m \"CSTASH-ED ('git cpop' to un-stash)\""
     cpop = "!git reset --mixed HEAD~1"
     st = status -s
+    aa = add -A
