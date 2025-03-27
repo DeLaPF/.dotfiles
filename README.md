@@ -102,3 +102,9 @@ brew install openjdk@21
 sudo ln -sfn /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-21.jdk
 jenv add /Library/Java/JavaVirtualMachines/openjdk-21.jdk/Contents/Home
 ```
+
+### Zig
+- Install [zvm](https://www.zvm.app/guides/install-zvm/):
+`curl https://raw.githubusercontent.com/tristanisham/zvm/master/install.sh | bash`
+- Check for most recent stable version at [zig website](https://ziglang.org/download/)
+- Run: `zvm i --zls <version> && zvm use <version>`

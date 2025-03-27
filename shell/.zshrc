@@ -5,6 +5,8 @@ BOB_NVIM_PATH="$HOME/.local/share/bob/nvim-bin"
 SCRIPTS_PATH="$HOME/.scripts"
 LCL_GO_PATH="$HOME/.local/share/go/bin"
 JENV_ROOT="$HOME/.jenv"
+ZVM_ROOT="$HOME/.zvm"
+export ZVM_INSTALL="$HOME/.zvm/self"
 export PYENV_ROOT="$HOME/.pyenv"
 export NVM_DIR="$HOME/.nvm"
 
@@ -20,6 +22,10 @@ export NVM_DIR="$HOME/.nvm"
 [ -d $LCL_GO_PATH ] && path+=($LCL_GO_PATH)
 # Add jenv to path (if exists)
 [ -d $JENV_ROOT/bin ] && path+=("$JENV_ROOT/bin")
+# Add zvm to path (if exists)
+[ -d $ZVM_ROOT/bin ] && path+=("$ZVM_ROOT/bin")
+# Add zvm-install to path (if exists)
+[ -d $ZVM_INSTALL ] && path+=($ZVM_INSTALL)
 # Add pyenv to path (if exists)
 [ -d $PYENV_ROOT/bin ] && path+=("$PYENV_ROOT/bin")
 # Add nvm to path (if exists)
@@ -27,8 +33,9 @@ export NVM_DIR="$HOME/.nvm"
 path+=($HOME/.local/bin)
 export PATH
 
-# Use Starship For Prompt (may switch to PS1 in the future)
-eval "$(starship init zsh)"
+# Handle default editor
+export VISUAL=nvim
+export EDITOR="$VISUAL"
 
 # History in cache directory:
 HISTSIZE=10000
@@ -97,6 +104,12 @@ bindkey '^[e' edit-command-line
 
 # Load nvm completion (if exists)
 [ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"
+
+# Load direnv (if exists)
+(( $+commands[direnv] )) && eval "$(direnv hook zsh)"
+
+# Load Starship (if exists). May switch to PS1 in the future
+(( $+commands[starship] )) && eval "$(starship init zsh)"
 
 # Load zsh-syntax-highlighting (if exists); should be last.
 ZSH_PLUGIN_ROOT="$HOME/.zsh/plugins"

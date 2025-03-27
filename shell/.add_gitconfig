@@ -1,0 +1,8 @@
+# NOTE: Add the following to the global `.gitconfig` (`~/.gitconfig`)
+# [include]
+#     path = ~/.add_gitconfig
+
+[alias]
+    cstash = "!git add -A && git commit -m \"CSTASH-ED ('git cpop' to un-stash)\""
+    cpop = "!git reset --mixed HEAD~1"
+    st = status -s
