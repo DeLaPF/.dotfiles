@@ -4,6 +4,8 @@
 
 [alias]
     cstash = "!git add -A && git commit --no-verify -m \"CSTASH-ED ('git cpop' to un-stash)\""
-    cpop = "!git reset --mixed HEAD~1"
+    cpop = reset HEAD~1
+    cundo = reset @{1}
     st = status -s
     aa = add -A
+    ll = log -1
