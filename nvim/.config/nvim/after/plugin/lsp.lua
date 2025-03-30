@@ -73,6 +73,9 @@ lsp_config['dartls'].setup({
     },
 })
 
+-- Zig (zls managed by zvm)
+lsp_config['zls'].setup({})
+
 local cmp = require('cmp')
 local cmp_action = require('lsp-zero').cmp_action()
 local cmp_format = require('lsp-zero').cmp_format()
