@@ -1,3 +1,7 @@
+-- TODO: there is much left to be desired from this current config
+-- Clean up packer bits
+-- Move over to more "lazy" way
+
 require('delapf.remap')
 require('delapf.set')
 require('delapf.lazy')

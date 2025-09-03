@@ -2,7 +2,7 @@
 
 ## Requirements:
 - GNU stow (otherwise manual symlink)
-- neovim v0.9.0 or above (otherwise don't include `nvim` in stow command)
+- neovim v0.11.3 or above (otherwise don't include `nvim` in stow command)
 - starship (otherwise don't include `shell` becuase `.zshrc` will error)
 - tmux v3.4 (otherwise ERROR: `invalid option: allow-passthrough`)
 
