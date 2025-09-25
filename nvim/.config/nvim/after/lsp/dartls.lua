@@ -1,0 +1,7 @@
+return {
+    settings = {
+        dart = {
+            analysisExcludedFolders = {},
+        },
+    },
+}
