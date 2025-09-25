@@ -2,6 +2,7 @@
 BREW_PATH="/opt/homebrew/bin"
 CARGO_ENV_PATH="$HOME/.cargo/env"
 BOB_NVIM_PATH="$HOME/.local/share/bob/nvim-bin"
+LCL_NVIM_PATH="$HOME/.local/share/neovim/bin"
 SCRIPTS_PATH="$HOME/.scripts"
 LCL_GO_PATH="$HOME/.local/share/go/bin"
 JENV_ROOT="$HOME/.jenv"
@@ -12,6 +13,8 @@ export NVM_DIR="$HOME/.nvm"
 
 # Add homebrew to path (if exists)
 [ -d $BREW_PATH ] && path+=($BREW_PATH)
+# Add local nvim to path (if exists) (takes precedence over bob)
+[ -d $LCL_NVIM_PATH ] && path+=($LCL_NVIM_PATH)
 # Load cargo env (if exists)
 [ -f $CARGO_ENV_PATH ] && source $CARGO_ENV_PATH
 # Add bob-nvim to path (if exists)
@@ -88,10 +91,8 @@ bindkey '^[e' edit-command-line
 
 # Load aliases (if exists)
 [ -f "$HOME/.aliasrc" ] && source "$HOME/.aliasrc"
-# Load additional rc (run commands) config (if exists) (TODO: replace add_env)
+# Load additional rc (run commands) config (if exists)
 [ -f "$HOME/.addrc" ] && source "$HOME/.addrc"
-# Load additional environment vars (if exists)
-[ -f "$HOME/.add_env" ] && source "$HOME/.add_env"
 # Load sh_funcs (if exists)
 [ -n "$(ls -A $HOME/.sh_funcs 2>/dev/null)" ] && for f in $HOME/.sh_funcs/*; do source $f; done
 

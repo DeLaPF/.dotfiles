@@ -2,7 +2,7 @@
 
 ## Requirements:
 - GNU stow (otherwise manual symlink)
-- neovim v0.11.3 or above (otherwise don't include `nvim` in stow command)
+- neovim v0.11.4 or above (otherwise don't include `nvim` in stow command)
 - starship (otherwise don't include `shell` becuase `.zshrc` will error)
 - tmux v3.4 (otherwise ERROR: `invalid option: allow-passthrough`)
 
@@ -49,6 +49,11 @@ If cloned elsewhere:
 
 ### Neovim
 - `bob install stable && bob use stable`
+#### Build from source (for unsupported systems) [ref](https://github.com/neovim/neovim/blob/master/INSTALL.md#install-from-source)
+- Install prereqs: `sudo apt-get install ninja-build gettext cmake curl build-essential git`
+- Clone and checkout stable: `git clone https://github.com/neovim/neovim && cd neovim && git checkout stable`
+- Build: `make CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=$HOME/.local/share/neovim"`
+- Install: `make install`
 
 ## Additional Env setup
 ### GitHub CLI
