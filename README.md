@@ -33,7 +33,10 @@ If cloned elsewhere:
 - Install [plugin manager](https://github.com/tmux-plugins/tpm):
 `git clone https://github.com/tmux-plugins/tpm $HOME/.tmux/plugins/tpm`
 
-### Zsh Highlighting (For "Fish-like" syntax hightlighting)
+### Zsh
+- `sudo apt install zsh`
+- `sudo chsh $USER /usr/bin/zsh`
+#### Highlighting (For "Fish-like" syntax hightlighting)
 - Install [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting):
 `git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $HOME/.zsh/plugins/zsh-syntax-highlighting`
 
@@ -79,6 +82,8 @@ If cloned elsewhere:
 `curl -sS https://bootstrap.pypa.io/get-pip.py | python3`
 - Install [pyenv](https://github.com/pyenv/pyenv):
 `git clone https://github.com/pyenv/pyenv.git $HOME/.pyenv`
+- Install [pyenv-virtualenv](https://github.com/pyenv/pyenv-virtualenv?tab=readme-ov-file#installing-as-a-pyenv-plugin):
+`git clone https://github.com/pyenv/pyenv-virtualenv.git $(pyenv root)/plugins/pyenv-virtualenv`
 - Setup env for [pyenv](https://github.com/pyenv/pyenv/wiki#suggested-build-environment)
 (required to run `pyenv install x.x.x`):
 ```
@@ -101,11 +106,17 @@ libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-d
  - Notes:
   - When using brew to install java, it will provide the correct symlink command in its output
   - The provided `jenv add` command does not seem to work, use `jenv add /Library/Java/JavaVirtualMachines/openjdk.jdk/Contents/Home` (after symlinking) instead
-- Example for openjdk version 21:
+- Example for openjdk version 21 (Mac):
 ```
 brew install openjdk@21
 sudo ln -sfn /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-21.jdk
 jenv add /Library/Java/JavaVirtualMachines/openjdk-21.jdk/Contents/Home
+```
+- Example for openjdk version 17 (Linux):
+```
+sudo apt install openjdk-17-jdk
+jenv add /usr/lib/jvm/java-17-openjdk-amd64
+jenv global openjdk64-17.0.17
 ```
 
 ### Zig

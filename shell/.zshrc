@@ -100,8 +100,8 @@ bindkey '^[e' edit-command-line
 [ -d $JENV_ROOT/bin ] && eval "$(jenv init -)"
 
 # Load pyenv (if exists)
-[ -d $PYENV_ROOT/bin ] && eval "$(pyenv init -)"
-[ -d $PYENV_ROOT/bin ] && eval "$(pyenv virtualenv-init -)"
+[ -d $PYENV_ROOT ] && eval "$(pyenv init -)"
+[ -d $PYENV_ROOT ] && eval "$(pyenv virtualenv-init -)"
 
 # Load nvm completion (if exists)
 [ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"
