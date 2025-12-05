@@ -5,6 +5,10 @@ function refresh() {
     source ~/.zshrc
 }
 
+# .scripts
+alias gsconv="gsconv.sh"
+alias tdiff="tdiff.sh"
+
 # Tmux
 alias tm="tmux"
 alias tml="tmux ls"
