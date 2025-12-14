@@ -17,9 +17,6 @@ alias tmat="tmux attach -t"
 
 # NeoVim
 alias vim="nvim"
-# Open with Custom Commands
-alias ff="nvim +TelescopeFindFile"
-alias fp="nvim +TelescopeFindPattern"
 
 # Docker
 alias dps="docker ps"

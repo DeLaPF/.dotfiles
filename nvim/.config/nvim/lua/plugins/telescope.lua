@@ -64,6 +64,16 @@ return { -- Fuzzy Finder (files, lsp, etc)
                     }
                 }
             },
+            pickers = {
+                marks = {
+                    attach_mappings = function(prompt_bufnr, map)
+                        map("n", "dd", function()
+                            require("telescope.actions").delete_mark(prompt_bufnr)
+                        end)
+                        return true -- Keep default mappings as well as the custom ones
+                    end,
+                },
+            },
             extensions = {
                 ["ui-select"] = {
                     require("telescope.themes").get_dropdown(),
@@ -84,6 +94,8 @@ return { -- Fuzzy Finder (files, lsp, etc)
         vim.keymap.set("n", "<leader>s.", builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
         vim.keymap.set("n", "<leader>sh", builtin.help_tags, { desc = "[S]earch [H]elp" })
         vim.keymap.set("n", "<leader>sk", builtin.keymaps, { desc = "[S]earch [K]eymaps" })
+        vim.keymap.set("n", '<leader>sm', function() builtin.marks({ mark_type = "global" }) end, { desc = "[S]earch Global [M]arks" })
+        vim.keymap.set("n", '<leader>slm', function() builtin.marks({ mark_type = "local" }) end, { desc = "[S]earch [L]ocal [M]arks" })
 
         -- TODO: see if I care about these
         vim.keymap.set("n", "<leader>ss", builtin.builtin, { desc = "[S]earch [S]elect Telescope" })
