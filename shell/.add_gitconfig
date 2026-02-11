@@ -9,3 +9,4 @@
     st = status -s
     aa = add -A
     ll = log -1
+    b = checkout -
