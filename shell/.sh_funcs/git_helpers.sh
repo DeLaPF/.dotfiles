@@ -2,8 +2,10 @@
 
 function gcb() {
     #date +: %Y, %m, %d, %H, %M, %S
-    BRANCH_NAME=$(echo $USER'_'$(date +%Y_%m_%d_%H%M))
-    git checkout -b $BRANCH_NAME
+    local suffix=$(date +%Y_%m_%d_%H%M)
+    # If $1 exists, append it with an underscore; otherwise, leave empty.
+    local name_part="${1:+${1}__}"
+    git checkout -b "$USER/${name_part}${suffix}"
 }
 
 function grs() {

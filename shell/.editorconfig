@@ -1,0 +1,21 @@
+root = true
+
+# -- Global Defaults --
+[*]
+max_line_length = 80
+indent_style = space
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# -- Specific Languages --
+
+# Web Tech (2 spaces is standard)
+[*.{js,ts,jsx,tsx,json,html,css,yml,yaml,lua}]
+indent_size = 2
+
+# Makefiles (Must use tabs)
+[Makefile]
+indent_style = tab
