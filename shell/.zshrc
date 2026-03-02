@@ -40,6 +40,10 @@ export PATH
 export VISUAL=nvim
 export EDITOR="$VISUAL"
 
+# Enable colored ls output
+export CLICOLOR=1
+export LS_COLORS="di=34:ln=36:so=35:pi=33:ex=32:bd=1;33:cd=1;33:su=1;31:sg=1;31:tw=1;34:ow=1;34"
+
 # History in cache directory:
 HISTSIZE=10000
 SAVEHIST=10000

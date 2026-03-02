@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 function gcb() {
     #date +: %Y, %m, %d, %H, %M, %S
     local suffix=$(date +%Y_%m_%d_%H%M)
