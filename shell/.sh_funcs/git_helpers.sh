@@ -11,5 +11,10 @@ function grs() {
 }
 
 function gpo() {
-    git $1 push -u origin $(git rev-parse --abbrev-ref HEAD)
+    local branch=$(git rev-parse --abbrev-ref HEAD)
+    local repo=$(git remote get-url origin | sed -E 's|.*github\.com[:/](.+)(\.git)?$|\1|' | sed 's/\.git$//')
+    local default_branch=$(git remote show origin | sed -n 's/.*HEAD branch: //p')
+    git $1 push -u origin $branch
+
+    _link "https://github.com/$repo/compare/$default_branch...$branch" "Click to Open PR"
 }
