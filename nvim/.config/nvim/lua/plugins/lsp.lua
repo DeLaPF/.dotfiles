@@ -1,5 +1,42 @@
 return {
     {
+        "pmizio/typescript-tools.nvim",
+        dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
+        ft = { "typescript", "typescriptreact", "javascript", "javascriptreact" },
+        opts = {
+            tsserver_max_memory = 8192,
+        },
+        config = function(_, opts)
+            require("typescript-tools").setup(opts)
+
+            vim.g.ts_auto_restart = true
+
+            vim.api.nvim_create_user_command("TsToggleAutoRestart", function()
+                vim.g.ts_auto_restart = not vim.g.ts_auto_restart
+                vim.notify("TS auto-restart: " .. (vim.g.ts_auto_restart and "on" or "off"))
+            end, {})
+
+            vim.api.nvim_create_autocmd("LspDetach", {
+                group = vim.api.nvim_create_augroup("ts-tools-auto-restart", { clear = true }),
+                callback = function(event)
+                    if not vim.g.ts_auto_restart then
+                        return
+                    end
+                    local client = vim.lsp.get_client_by_id(event.data.client_id)
+                    if client and client.name == "typescript-tools" then
+                        vim.defer_fn(function()
+                            local clients = vim.lsp.get_clients({ bufnr = event.buf, name = "typescript-tools" })
+                            if #clients == 0 and vim.api.nvim_buf_is_valid(event.buf) then
+                                vim.cmd("edit")
+                                vim.notify("typescript-tools crashed, restarting...", vim.log.levels.WARN)
+                            end
+                        end, 1000)
+                    end
+                end,
+            })
+        end,
+    },
+    {
         -- `lazydev` configures Lua LSP for your Neovim config, runtime and plugins
         -- used for completion, annotations and signatures of Neovim apis
         "folke/lazydev.nvim",

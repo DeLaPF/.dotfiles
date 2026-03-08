@@ -54,3 +54,9 @@ vim.api.nvim_create_autocmd("FileType", {
     -- vim.opt_local.formatoptions:append("r")
   end,
 })
+
+-- auto reload files
+vim.o.autoread = true
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold" }, {
+  command = "checktime",
+})
