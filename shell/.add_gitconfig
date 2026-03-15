@@ -5,6 +5,7 @@
 [alias]
     cstash = "!git add -A && git commit --no-verify -m \"CSTASH-ED ('git cpop' to un-stash)\""
     cpop = reset HEAD~1
+    # undo accidental cpop (re-commits)
     cundo = reset @{1}
     st = status -s
     aa = add -A
