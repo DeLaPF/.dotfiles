@@ -23,6 +23,13 @@ function gwt() {
 
     local hook_dir="$dir/.worktree-hooks"
 
+    _gwt_post_create() {
+        local wt="$1"
+        [ -d "$dir/.ctx" ] && cp -a "$dir/.ctx/." "$wt/"
+        [ -x "$hook_dir/on-create" ] && "$hook_dir/on-create" "$wt"
+        cd "$wt"
+    }
+
     case "$1" in
         -c)
             local date_short=$(date +%m%d)
@@ -34,10 +41,7 @@ function gwt() {
                 wt_name="${USER}__${date_short}__${time_short}"
             fi
             local start_point=${3:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null)}
-            git -C "$dir/.bare" worktree add "$dir/$wt_name" -b "$wt_name" $start_point && {
-                [ -x "$hook_dir/on-create" ] && "$hook_dir/on-create" "$dir/$wt_name"
-                cd "$dir/$wt_name"
-            }
+            git -C "$dir/.bare" worktree add "$dir/$wt_name" -b "$wt_name" $start_point && _gwt_post_create "$dir/$wt_name"
             ;;
         -e)
             local branch="$2"
@@ -45,10 +49,7 @@ function gwt() {
                 echo "Usage: gwt -e <existing-branch>" >&2
                 return 1
             fi
-            git -C "$dir/.bare" worktree add "$dir/$branch" "$branch" && {
-                [ -x "$hook_dir/on-create" ] && "$hook_dir/on-create" "$dir/$branch"
-                cd "$dir/$branch"
-            }
+            git -C "$dir/.bare" worktree add "$dir/$branch" "$branch" && _gwt_post_create "$dir/$branch"
             ;;
         -r)
             shift
