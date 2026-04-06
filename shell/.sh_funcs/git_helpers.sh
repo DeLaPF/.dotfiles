@@ -1,3 +1,16 @@
+function bare-clone() {
+    local url="$1"
+    if [ -z "$url" ]; then
+        echo "Usage: $0 <repo-url>" >&2
+        return 1
+    fi
+    local name=$(basename "$url" .git)
+    mkdir "$name" && git clone --bare "$url" "$name/.bare"
+    git -C "$name/.bare" config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
+    local branch=$(git -C "$name/.bare" symbolic-ref HEAD | sed 's|refs/heads/||')
+    git -C "$name/.bare" worktree add "../$branch" "$branch"
+}
+
 function gcb() {
     #date +: %Y, %m, %d, %H, %M, %S
     local suffix=$(date +%Y_%m_%d_%H%M)

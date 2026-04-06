@@ -110,8 +110,8 @@ bindkey '^[e' edit-command-line
 # Load nvm completion (if exists)
 [ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"
 
-# Load direnv (if exists)
-(( $+commands[direnv] )) && eval "$(direnv hook zsh)"
+# Load direnv (if exists) (trying to replace with internal zenv)
+# (( $+commands[direnv] )) && eval "$(direnv hook zsh)"
 
 # Load Starship (if exists). May switch to PS1 in the future
 (( $+commands[starship] )) && eval "$(starship init zsh)"
