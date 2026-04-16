@@ -62,7 +62,8 @@ function gwt() {
                 echo "Usage: gwt -e <existing-branch>" >&2
                 return 1
             fi
-            git -C "$dir/.bare" worktree add "$dir/$branch" "$branch" && _gwt_post_create "$dir/$branch"
+            local wt_dir="${branch//\//__}"
+            git -C "$dir/.bare" worktree add "$dir/$wt_dir" "$branch" && _gwt_post_create "$dir/$wt_dir"
             ;;
         -r)
             shift
