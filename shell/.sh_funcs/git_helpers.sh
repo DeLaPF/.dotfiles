@@ -75,10 +75,28 @@ function gwt() {
             [ -x "$hook_dir/on-remove" ] && "$hook_dir/on-remove" "$wt_path"
             cd "$dir" && git -C "$dir/.bare" worktree remove "$@" "$wt_path"
             ;;
+        -m)
+            local new_name="$2"
+            if [ -z "$new_name" ]; then
+                echo "Usage: gwt -m <name>" >&2
+                return 1
+            fi
+            local wt_path
+            wt_path=$(git rev-parse --show-toplevel 2>/dev/null) || {
+                echo "Error: not inside a worktree" >&2
+                return 1
+            }
+            local date_short=$(date +%m%d)
+            local wt_name="${USER}__${new_name}__${date_short}"
+            git -C "$wt_path" branch -m "$wt_name" \
+                && git -C "$dir/.bare" worktree move "$wt_path" "$dir/$wt_name" \
+                && cd "$dir/$wt_name"
+            ;;
         *)
             echo "Usage: gwt <command>"
             echo "  -c [name] [base]   Create new worktree (name optional, base defaults to current branch)"
             echo "  -e <branch>        Check out existing branch into a new worktree"
+            echo "  -m <name>          Rename current worktree (and its branch) to USER__name__MMDD"
             echo "  -r [--force]       Remove current worktree"
             ;;
     esac

@@ -8,6 +8,8 @@
     # undo accidental cpop (re-commits)
     cundo = reset @{1}
     st = status -s
+    can = commit --amend --no-edit
+    cam = commit --amend
     aa = add -A
     ll = log -1
     b = checkout -
