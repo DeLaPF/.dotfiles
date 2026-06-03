@@ -6,6 +6,9 @@
 # and loads the nearest .envrc. Does not stack parent .envrc files like
 # direnv's `source_env`. To support stacking, would need an array of
 # loaded dirs + per-file diff tracking + reverse-order restore.
+#
+# HOOK: if .envrc defines a function named `zenv_deactivate`, it runs
+# on unload before env/aliases/funcs are restored.
 
 # Tracks only what .envrc changed (added or modified)
 typeset -gA _zenv_added_env       # key -> ""  (new vars to unset on restore)
@@ -16,6 +19,7 @@ typeset -gA _zenv_added_funcs     # key -> ""
 typeset -gA _zenv_changed_funcs   # key -> old_body
 typeset -g _zenv_loaded_dir=""
 typeset -g _zenv_loaded_hash=""
+typeset -g _zenv_loading=""  # guard so the cd into .envrc dir doesn't re-trigger the hook
 typeset -g _zenv_allow_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zenv/allowed"
 
 # --- Security ---
@@ -70,8 +74,18 @@ _zenv_diff() {
         before_funcs[$key]="${functions[$key]}"
     done
 
-    # Source the envrc
-    source "$1"
+    # Source from the .envrc's directory so relative paths inside resolve
+    # against it, not against $PWD (which may be a subdir).
+    local _prev_pwd="$PWD" _prev_oldpwd="$OLDPWD"
+    _zenv_loading=1
+    cd "${1:h}"
+    {
+        source "$1"
+    } always {
+        cd "$_prev_pwd"
+        OLDPWD="$_prev_oldpwd"  # undo the OLDPWD side effect of the cd round-trip
+        _zenv_loading=""
+    }
 
     # Diff env vars
     _zenv_added_env=()
@@ -160,6 +174,10 @@ _zenv_load() {
 
 _zenv_unload() {
     [ -z "$_zenv_loaded_dir" ] && return
+    # Run user-defined deactivate hook while env/aliases/funcs are still active
+    if (( ${+functions[zenv_deactivate]} )); then
+        zenv_deactivate
+    fi
     _zenv_restore
     echo "zenv: unloaded $_zenv_loaded_dir/.envrc"
     _zenv_loaded_dir=""
@@ -169,6 +187,7 @@ _zenv_unload() {
 # --- Hook ---
 
 _zenv_hook() {
+    [ -n "$_zenv_loading" ] && return
     local envrc_dir
     envrc_dir=$(_zenv_find_envrc "$PWD")
 
