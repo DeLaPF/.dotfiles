@@ -10,6 +10,10 @@ ZVM_ROOT="$HOME/.zvm"
 export ZVM_INSTALL="$HOME/.zvm/self"
 export PYENV_ROOT="$HOME/.pyenv"
 export NVM_DIR="$HOME/.nvm"
+# Typst local package dir (cross-platform): matches Linux's default and
+# overrides macOS's ~/Library/Application Support so `@local` resolves the
+# stowed `typst` package identically on both OSes.
+export TYPST_PACKAGE_PATH="$HOME/.local/share/typst/packages"
 
 # Add homebrew to path (if exists)
 [ -d $BREW_PATH ] && path+=($BREW_PATH)

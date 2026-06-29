@@ -270,6 +270,16 @@ return {
                 -- ts_ls = {},
                 --
 
+                -- Typesetting. Provides completion/diagnostics/hover/format and,
+                -- with exportPdf below, writes a PDF beside the source on save.
+                -- Resolves `@local` templates via TYPST_PACKAGE_PATH (set in .zshrc).
+                tinymist = {
+                    settings = {
+                        exportPdf = "onSave",
+                        formatterMode = "typstyle",
+                    },
+                },
+
                 lua_ls = {
                     -- cmd = { ... },
                     -- filetypes = { ... },

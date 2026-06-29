@@ -12,7 +12,7 @@ For simplest setup clone to `$HOME/.dotfiles` (i.e. clone in `~` dir)
 - To remove configs run `stow -D nvim shell` from repo root
 
 If cloned elsewhere:
-- Run `stow -t $HOME nvim scripts shell` from repo root
+- Run `stow -t $HOME nvim shell` from repo root
 - To remove configs run `stow -Dt $HOME nvim shell` from repo root
 
 ## Env and Dependencies
@@ -27,6 +27,18 @@ If cloned elsewhere:
 
 ### CLI Search
 - `sudo apt install -y ripgrep`
+
+### Typst (Typesetting / document authoring → PDF)
+- macOS: `brew install typst`  •  Linux: `cargo install typst-cli` (or grab a [release](https://github.com/typst/typst/releases))
+- The `tinymist` language server (completion, diagnostics, format, PDF export on save) auto-installs
+  via Mason the first time you open a `.typ` file in neovim. Live preview via `typst-preview.nvim`.
+- In a `.typ` buffer (localleader is `\`): `\p` toggle preview · `\e` export PDF · `\o` open PDF · `\f` format.
+- Three local templates live in the `shell` package (`~/.local/share/typst/packages/local/`) and
+  resolve via `TYPST_PACKAGE_PATH` (set in `.zshrc`), so they import identically on macOS and Linux:
+  - `#import "@local/letter:0.1.0": letter` — business letter
+  - `#import "@local/doc:0.1.0": doc` — basic document (or just write plain typst)
+  - `#import "@local/slides:0.1.0": slides, title-slide, slide` — minimal 16:9 deck
+- Starter examples to open + preview: `~/typst/{letter,doc,slides}.typ`.
 
 ### Tmux (Terminal multiplexer/window manager)
 - `sudo apt install -y tmux`
