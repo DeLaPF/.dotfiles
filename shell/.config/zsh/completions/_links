@@ -1,0 +1,3 @@
+#compdef links
+
+_core_fzf_completions "$HOME/.linksrc"

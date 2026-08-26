@@ -1,0 +1,28 @@
+emulate -L zsh
+
+local playground_dir="$HOME/dev/playground"
+local name extension
+name=$(date '+%Y%m%d%H%M')
+extension=''
+
+case "$1" in
+  python|py)
+    playground_dir="$playground_dir/python"
+    extension=py
+    ;;
+  *)
+    name="${1%.*}"
+    extension="${1##*.}"
+    case "$extension" in
+      py) playground_dir="$playground_dir/python" ;;
+      *)
+        printf 'Unknown command: %s\n' "$1" >&2
+        return 1
+        ;;
+    esac
+    ;;
+esac
+
+[[ -d "$playground_dir" ]] || mkdir -p "$playground_dir" || return
+cd "$playground_dir" || return
+"$EDITOR" "$name.$extension"

@@ -1,0 +1,14 @@
+emulate -L zsh
+
+local selection command_text
+selection=$(_core_fzf_engine \
+  "$HOME/.cmdsrc" \
+  "$1" \
+  'Select Command> ' \
+  's/[[:space:]]*::[[:space:]]*/\t/') || return
+
+[[ -n "$selection" ]] || return
+command_text="${selection#*$'\t'}"
+
+printf '\e[36mQueued:\e[0m %s\n' "$command_text"
+print -z "$command_text"

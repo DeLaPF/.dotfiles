@@ -1,0 +1,9 @@
+emulate -L zsh
+
+local repo_dir="$1"
+local hook_dir="$2"
+local worktree="$3"
+
+[[ -d "$repo_dir/.ctx" ]] && cp -a "$repo_dir/.ctx/." "$worktree/"
+[[ -x "$hook_dir/on-create" ]] && "$hook_dir/on-create" "$worktree"
+cd "$worktree"

@@ -1,13 +1,5 @@
 # Basic
 alias ll="ls -lA"
-alias refr="refresh"
-function refresh() {
-    source ~/.zshrc
-}
-
-# .scripts
-alias gsconv="gsconv.sh"
-alias tdiff="tdiff.sh"
 
 # Tmux
 alias tm="tmux"

@@ -1,0 +1,74 @@
+emulate -L zsh
+
+local repo_dir="$PWD"
+while [[ "$repo_dir" != / && ! -d "$repo_dir/.bare" ]]; do
+  repo_dir=$(dirname "$repo_dir")
+done
+
+if [[ ! -d "$repo_dir/.bare" ]]; then
+  printf 'Error: could not find .bare/ directory\n' >&2
+  return 1
+fi
+
+local hook_dir="$repo_dir/.worktree-hooks"
+
+case "$1" in
+  -c)
+    local date_short time_short worktree_name start_point
+    date_short=$(date +%m%d)
+    time_short=$(date +%H%M)
+    if [[ -n "$2" ]]; then
+      worktree_name="${USER}__${2}__${date_short}"
+    else
+      worktree_name="${USER}__${date_short}__${time_short}"
+    fi
+    start_point="${3:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null)}"
+    git -C "$repo_dir/.bare" worktree add "$repo_dir/$worktree_name" -b "$worktree_name" "$start_point" &&
+      _gwt_post_create "$repo_dir" "$hook_dir" "$repo_dir/$worktree_name"
+    ;;
+  -e)
+    local branch="$2"
+    if [[ -z "$branch" ]]; then
+      printf 'Usage: gwt -e <existing-branch>\n' >&2
+      return 1
+    fi
+    local worktree_dir="${branch//\//__}"
+    git -C "$repo_dir/.bare" worktree add "$repo_dir/$worktree_dir" "$branch" &&
+      _gwt_post_create "$repo_dir" "$hook_dir" "$repo_dir/$worktree_dir"
+    ;;
+  -r)
+    shift
+    local worktree_path
+    worktree_path=$(git rev-parse --show-toplevel 2>/dev/null) || {
+      printf 'Error: not inside a worktree\n' >&2
+      return 1
+    }
+    [[ -x "$hook_dir/on-remove" ]] && "$hook_dir/on-remove" "$worktree_path"
+    cd "$repo_dir" && git -C "$repo_dir/.bare" worktree remove "$@" "$worktree_path"
+    ;;
+  -m)
+    local new_name="$2"
+    if [[ -z "$new_name" ]]; then
+      printf 'Usage: gwt -m <name>\n' >&2
+      return 1
+    fi
+    local worktree_path date_short worktree_name
+    worktree_path=$(git rev-parse --show-toplevel 2>/dev/null) || {
+      printf 'Error: not inside a worktree\n' >&2
+      return 1
+    }
+    date_short=$(date +%m%d)
+    worktree_name="${USER}__${new_name}__${date_short}"
+    git -C "$worktree_path" branch -m "$worktree_name" &&
+      git -C "$repo_dir/.bare" worktree move "$worktree_path" "$repo_dir/$worktree_name" &&
+      cd "$repo_dir/$worktree_name"
+    ;;
+  *)
+    printf '%s\n' \
+      'Usage: gwt <command>' \
+      '  -c [name] [base]   Create new worktree (name optional, base defaults to current branch)' \
+      '  -e <branch>        Check out existing branch into a new worktree' \
+      '  -m <name>          Rename current worktree (and its branch) to USER__name__MMDD' \
+      '  -r [--force]       Remove current worktree'
+    ;;
+esac

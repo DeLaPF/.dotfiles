@@ -1,0 +1,3 @@
+emulate -L zsh
+
+printf '\e]8;;%s\e\\%s\e]8;;\e\\\n' "$1" "$2"

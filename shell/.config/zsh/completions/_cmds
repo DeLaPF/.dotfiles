@@ -1,0 +1,3 @@
+#compdef cmds
+
+_core_fzf_completions "$HOME/.cmdsrc"

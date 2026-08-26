@@ -1,0 +1,19 @@
+#!/bin/sh
+
+if [ "$#" -ne 1 ]; then
+  printf '[Error] Usage: %s <gs://bucket_name/path/to/resource>\n' "$0" >&2
+  exit 1
+fi
+
+gs_url="$1"
+
+case "$gs_url" in
+  gs://*) ;;
+  *)
+    printf "[Error] Invalid path: arg must have 'gs://' prefix\n" >&2
+    exit 1
+    ;;
+esac
+
+g_path="${gs_url#gs://}"
+printf 'https://console.cloud.google.com/storage/browser/%s\n' "$g_path"

@@ -1,0 +1,5 @@
+#compdef zenv
+
+_arguments \
+  '1:command:(allow deny reload status help)' \
+  '2:path:_files'

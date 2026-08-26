@@ -1,9 +1,62 @@
 [tools]
 node = "24.19.0"
 python = "3.12.12"
+uv = "0.12.6"
+pnpm = "11.1.2"
+
+starship = "1.24.2"
+typst = "0.15.1"
+rg = "15.1.0"
+fzf = "0.67.0"
+bat = "0.26.1"
+gh = "2.89.0"
+bob = "4.1.6"
+
+# Intentionally unpinned globally until needed: java, go, zig, and zls.
+# Bob remains the Neovim owner because it supports source builds.
 
 [settings]
 # Installation should be deliberate, especially in agent and CI shells.
 not_found_auto_install = false
 # Never substitute an unrelated Homebrew/system binary for a missing managed tool.
 not_found_system_fallback = false
+
+[tasks."dotfiles:setup"]
+description = "Install dotfile-managed shell and tmux plugins"
+depends = ["dotfiles:zsh-plugins", "dotfiles:tmux-plugins"]
+
+[tasks."dotfiles:zsh-plugins"]
+description = "Install zsh-syntax-highlighting"
+run = '''
+set -eu
+destination="$HOME/.zsh/plugins/zsh-syntax-highlighting"
+
+if [ -d "$destination/.git" ]; then
+  exit 0
+fi
+if [ -e "$destination" ]; then
+  echo "Refusing to replace non-git path: $destination" >&2
+  exit 1
+fi
+
+mkdir -p "${destination%/*}"
+git clone --depth 1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$destination"
+'''
+
+[tasks."dotfiles:tmux-plugins"]
+description = "Install TPM and the plugins declared in ~/.tmux.conf"
+run = '''
+set -eu
+destination="$HOME/.tmux/plugins/tpm"
+
+if [ ! -d "$destination/.git" ]; then
+  if [ -e "$destination" ]; then
+    echo "Refusing to replace non-git path: $destination" >&2
+    exit 1
+  fi
+  mkdir -p "${destination%/*}"
+  git clone --depth 1 https://github.com/tmux-plugins/tpm "$destination"
+fi
+
+"$destination/bin/install_plugins"
+'''

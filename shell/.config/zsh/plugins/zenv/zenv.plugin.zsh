@@ -1,4 +1,4 @@
-# zenv - shell environment manager (zsh-only direnv alternative)
+# zenv - stateful shell environment plugin (zsh-only direnv alternative)
 # Manages env vars, aliases, and functions from .envrc files
 # with automatic loading/unloading on directory change
 #
@@ -29,24 +29,39 @@ _zenv_hash() {
 }
 
 _zenv_allow_file() {
-    local dir="$1"
+    local dir="${1:A}"
     echo "$_zenv_allow_dir/$(echo "$dir" | shasum -a 256 | cut -d' ' -f1)"
 }
 
-zenv-allow() {
-    local envrc="${1:-$PWD/.envrc}"
-    [ -f "$envrc" ] || { echo "No .envrc found" >&2; return 1; }
+_zenv_allow() {
+    local target="${1:-$PWD}"
+    local envrc_dir
+    if [ -f "$target" ]; then
+        envrc_dir="${target:h:A}"
+    else
+        envrc_dir=$(_zenv_find_envrc "$target") || {
+            echo "No .envrc found" >&2
+            return 1
+        }
+    fi
+    local envrc="$envrc_dir/.envrc"
     mkdir -p "$_zenv_allow_dir"
-    _zenv_hash "$envrc" > "$(_zenv_allow_file "$(dirname "$envrc")")"
-    echo "zenv: allowed $(dirname "$envrc")/.envrc"
+    _zenv_hash "$envrc" > "$(_zenv_allow_file "$envrc_dir")"
+    echo "zenv: allowed $envrc"
     _zenv_hook
 }
 
-zenv-deny() {
-    local dir="${1:-$PWD}"
+_zenv_deny() {
+    local target="${1:-$PWD}"
+    local dir
+    if [ "${target:t}" = .envrc ]; then
+        dir="${target:h:A}"
+    else
+        dir=$(_zenv_find_envrc "$target" 2>/dev/null) || dir="${target:A}"
+    fi
     rm -f "$(_zenv_allow_file "$dir")"
     echo "zenv: denied $dir/.envrc"
-    _zenv_unload
+    [ "$dir" = "$_zenv_loaded_dir" ] && _zenv_unload
 }
 
 _zenv_is_allowed() {
@@ -153,7 +168,7 @@ _zenv_restore() {
 # --- Load / Unload ---
 
 _zenv_find_envrc() {
-    local dir="$1"
+    local dir="${1:A}"
     while [ "$dir" != "/" ]; do
         if [ -f "$dir/.envrc" ]; then
             echo "$dir"
@@ -162,6 +177,32 @@ _zenv_find_envrc() {
         dir=$(dirname "$dir")
     done
     return 1
+}
+
+_zenv_status() {
+    local target="${1:-$PWD}"
+    [ "${target:t}" = .envrc ] && target="${target:h}"
+
+    local envrc_dir
+    envrc_dir=$(_zenv_find_envrc "$target") || {
+        echo "zenv: none (no .envrc found from $target)"
+        return 1
+    }
+
+    local state
+    if [ "$envrc_dir" = "$_zenv_loaded_dir" ]; then
+        if [ "$(_zenv_hash "$envrc_dir/.envrc")" = "$_zenv_loaded_hash" ]; then
+            state=loaded
+        else
+            state=changed
+        fi
+    elif _zenv_is_allowed "$envrc_dir"; then
+        state=allowed
+    else
+        state=blocked
+    fi
+
+    echo "zenv: $state $envrc_dir/.envrc"
 }
 
 _zenv_load() {
@@ -204,7 +245,7 @@ _zenv_hook() {
                 _zenv_unload
                 _zenv_load "$envrc_dir"
             else
-                echo "zenv: .envrc changed, run 'zenv-allow' to reload"
+                echo "zenv: .envrc changed, run 'zenv allow' to reload"
             fi
         fi
         return
@@ -216,7 +257,7 @@ _zenv_hook() {
     if _zenv_is_allowed "$envrc_dir"; then
         _zenv_load "$envrc_dir"
     else
-        echo "zenv: blocked $envrc_dir/.envrc (run 'zenv-allow' to trust)"
+        echo "zenv: blocked $envrc_dir/.envrc (run 'zenv allow' to trust)"
     fi
 }
 
@@ -230,9 +271,40 @@ _zenv_precmd() {
         _zenv_unload
         _zenv_load "$_zenv_loaded_dir"
     else
-        echo "zenv: .envrc changed, run 'zenv-allow' to reload"
+        echo "zenv: .envrc changed, run 'zenv allow' to reload"
         _zenv_loaded_hash="$current_hash"  # avoid repeating the message
     fi
+}
+
+# --- Command surface ---
+
+zenv() {
+    emulate -L zsh
+
+    local command_name="${1:-help}"
+    (( $# )) && shift
+
+    case "$command_name" in
+        allow)  _zenv_allow "$@" ;;
+        deny)   _zenv_deny "$@" ;;
+        reload)
+            _zenv_unload
+            _zenv_hook
+            ;;
+        status) _zenv_status "$@" ;;
+        help|-h|--help)
+            printf '%s\n' \
+                'Usage: zenv <command> [path]' \
+                '  allow [path]   Trust and load the nearest .envrc' \
+                '  deny [path]    Revoke trust and unload its .envrc' \
+                '  reload         Reload the current trusted .envrc' \
+                '  status [path]  Show none, blocked, allowed, changed, or loaded'
+            ;;
+        *)
+            echo "zenv: unknown command: $command_name" >&2
+            return 1
+            ;;
+    esac
 }
 
 autoload -Uz add-zsh-hook

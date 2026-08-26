@@ -1,0 +1,32 @@
+#!/bin/sh
+
+word_diff_arg=""
+
+while getopts "w" opt; do
+  case $opt in
+    w) word_diff_arg="--word-diff" ;;
+    \?)
+      printf 'Invalid option: -%s\nUsage: tdiff [-w]\n' "$OPTARG" >&2
+      exit 1
+      ;;
+  esac
+done
+
+f1=$(mktemp) || exit
+f2=$(mktemp) || {
+  rm -f "$f1"
+  exit 1
+}
+trap 'rm -f "$f1" "$f2"' EXIT
+
+printf '> Paste first block (Enter, then Ctrl+D to submit)\n'
+cat >"$f1"
+printf '\n> Paste second block (Enter, then Ctrl+D to submit)\n'
+cat >"$f2"
+printf '\n'
+
+if [ -n "$word_diff_arg" ]; then
+  git diff --no-index --color=auto "$word_diff_arg" "$f1" "$f2"
+else
+  git diff --no-index --color=auto "$f1" "$f2"
+fi

@@ -1,0 +1,32 @@
+emulate -L zsh
+
+local source_file="$1"
+[[ -f "$source_file" ]] || return
+
+local -a normal_words hidden_words
+
+normal_words=(${(f)"$(awk '
+  /^[[:space:]]*\[.*\][[:space:]]*$/ {
+    gsub(/^[[:space:]]*\[|\][[:space:]]*$/, "")
+    split($0, aliases, "|")
+    primary = aliases[1]
+    gsub(/^[[:space:]]+|[[:space:]]+$/, "", primary)
+    print primary
+  }
+' "$source_file")"})
+
+hidden_words=(${(f)"$(awk '
+  /^[[:space:]]*!\[.*\][[:space:]]*$/ {
+    gsub(/^[[:space:]]*!\[|\][[:space:]]*$/, "")
+    split($0, aliases, "|")
+    primary = aliases[1]
+    gsub(/^[[:space:]]+|[[:space:]]+$/, "", primary)
+    print primary
+  }
+' "$source_file")"})
+
+(( ${#normal_words[@]} )) &&
+  compadd -J normal -X $'\e[32mPublic Groups\e[0m' -a normal_words
+
+(( ${#hidden_words[@]} )) &&
+  compadd -J hidden -X $'\e[31mHidden Groups\e[0m' -a hidden_words

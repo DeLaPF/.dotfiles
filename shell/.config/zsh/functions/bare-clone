@@ -1,0 +1,14 @@
+emulate -L zsh
+
+local url="$1"
+if [[ -z "$url" ]]; then
+  printf 'Usage: %s <repo-url>\n' "$0" >&2
+  return 1
+fi
+
+local name branch
+name=$(basename "$url" .git)
+mkdir "$name" && git clone --bare "$url" "$name/.bare" || return
+git -C "$name/.bare" config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' || return
+branch=$(git -C "$name/.bare" symbolic-ref HEAD | sed 's|refs/heads/||') || return
+git -C "$name/.bare" worktree add "../$branch" "$branch"

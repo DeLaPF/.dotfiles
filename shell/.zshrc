@@ -7,8 +7,21 @@ HISTSIZE=10000
 SAVEHIST=10000
 HISTFILE=~/.cache/zsh/history
 
+# Register interactive commands and completion definitions without parsing
+# their implementations during startup.
+typeset _zshrc_completions="$HOME/.config/zsh/completions"
+[[ -d "$_zshrc_completions" ]] && fpath=("$_zshrc_completions" $fpath)
+unset _zshrc_completions
+
+typeset -a req_interactive=(
+  links cmds glg plg refr
+  _core_fzf_engine _core_fzf_completions
+)
+autoload -Uz $req_interactive
+unset req_interactive
+
 # Basic auto/tab complete:
-autoload -U compinit
+autoload -Uz compinit
 zstyle ':completion:*' menu select
 zmodload zsh/complist
 compinit
@@ -53,10 +66,8 @@ bindkey '^[e' edit-command-line
 
 # Load aliases (if exists)
 [ -f "$HOME/.aliasrc" ] && source "$HOME/.aliasrc"
-# Load additional rc (run commands) config (if exists)
-[ -f "$HOME/.addrc" ] && source "$HOME/.addrc"
-# Load sh_funcs (if exists)
-[ -n "$(ls -A $HOME/.sh_funcs 2>/dev/null)" ] && for f in $HOME/.sh_funcs/*; do source $f; done
+# Load device-local interactive setup that does not belong in shared dotfiles.
+[[ -r "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
 
 # Load direnv (if exists) (trying to replace with internal zenv)
 # (( $+commands[direnv] )) && eval "$(direnv hook zsh)"
@@ -66,4 +77,5 @@ bindkey '^[e' edit-command-line
 
 # Load zsh-syntax-highlighting (if exists); should be last.
 ZSH_PLUGIN_ROOT="$HOME/.zsh/plugins"
-[[ -d $ZSH_PLUGIN_ROOT/zsh-syntax-highlighting ]] && source "$ZSH_PLUGIN_ROOT/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" 2 > /dev/null
+[[ -d $ZSH_PLUGIN_ROOT/zsh-syntax-highlighting ]] && source "$ZSH_PLUGIN_ROOT/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+unset ZSH_PLUGIN_ROOT

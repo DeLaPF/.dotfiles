@@ -1,0 +1,4 @@
+emulate -L zsh
+
+# Replace the current shell so hooks and completion state are not duplicated.
+exec zsh

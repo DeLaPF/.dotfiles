@@ -1,0 +1,19 @@
+emulate -L zsh
+
+local selection name url
+selection=$(_core_fzf_engine \
+  "$HOME/.linksrc" \
+  "$1" \
+  'Select Link> ' \
+  's/ \([^ ]*\)$/\t\1/') || return
+
+[[ -n "$selection" ]] || return
+name="${selection%$'\t'*}"
+url="${selection#*$'\t'}"
+
+_link "$url" "$name"
+
+case "$OSTYPE" in
+  linux-gnu*) xdg-open "$url" >/dev/null 2>&1 ;;
+  darwin*) open "$url" ;;
+esac

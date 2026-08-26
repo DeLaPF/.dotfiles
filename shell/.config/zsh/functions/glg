@@ -1,0 +1,51 @@
+emulate -L zsh
+
+local -a missing
+command -v rg >/dev/null || missing+=(rg)
+command -v fzf >/dev/null || missing+=(fzf)
+command -v bat >/dev/null || missing+=(bat)
+if (( ${#missing[@]} )); then
+  printf 'Error: missing required commands: %s\n' "${(j: :)missing}" >&2
+  return 1
+fi
+
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  printf 'Error: Not inside a git repository\n' >&2
+  return 1
+fi
+
+local selected_lines
+selected_lines=$(rg --hidden --line-number --no-heading --color=always "$@" |
+  fzf --ansi \
+    --multi \
+    --delimiter : \
+    --preview 'bat --style=numbers --color=always --highlight-line {2} {1}' \
+    --preview-window 'up,60%,border-bottom,+{2}+3/3' \
+    --bind 'enter:accept')
+
+[[ -n "$selected_lines" ]] || return
+
+local remote_url hash repo_prefix
+remote_url=$(git config --get remote.origin.url) || return
+hash=$(git rev-parse HEAD) || return
+repo_prefix=$(git rev-parse --show-prefix) || return
+
+if [[ "$remote_url" == git@* ]]; then
+  remote_url=${remote_url#git@}
+  remote_url=${remote_url/://}
+  remote_url="https://${remote_url%.git}"
+else
+  remote_url=${remote_url%.git}
+fi
+
+local item file line permalink
+while IFS= read -r item; do
+  file=${item%%:*}
+  line=${${item#*:}%%:*}
+  permalink="${remote_url}/blob/${hash}/${repo_prefix}${file}#L${line}"
+
+  case "$OSTYPE" in
+    linux-gnu*) xdg-open "$permalink" >/dev/null 2>&1 ;;
+    darwin*) open "$permalink" ;;
+  esac
+done <<< "$selected_lines"
