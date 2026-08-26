@@ -34,7 +34,7 @@ If cloned elsewhere:
   via Mason the first time you open a `.typ` file in neovim. Live preview via `typst-preview.nvim`.
 - In a `.typ` buffer (localleader is `\`): `\p` toggle preview · `\e` export PDF · `\o` open PDF · `\f` format.
 - Three local templates live in the `shell` package (`~/.local/share/typst/packages/local/`) and
-  resolve via `TYPST_PACKAGE_PATH` (set in `.zshrc`), so they import identically on macOS and Linux:
+  resolve via `TYPST_PACKAGE_PATH` (set in `.zshenv`), so they import identically on macOS and Linux:
   - `#import "@local/letter:0.1.0": letter` — business letter
   - `#import "@local/doc:0.1.0": doc` — basic document (or just write plain typst)
   - `#import "@local/slides:0.1.0": slides, title-slide, slide` — minimal 16:9 deck
@@ -85,54 +85,30 @@ If cloned elsewhere:
 - Login: `gh auth login`
 
 ### Go
-- Find link to correct version of [go](https://go.dev/dl/) (e.g. https://go.dev/dl/go1.23.3.linux-amd64.tar.gz)
-- Install go (in this case to local user, alternatively can [global install](https://go.dev/doc/install)):
-`curl -sL https://go.dev/dl/go1.23.3.linux-amd64.tar.gz | tar -C $HOME/.local/share -xzf -`
+- Go is managed by Mise when needed: `mise use --pin go@<version>`.
+
+### Mise (runtime versions)
+- Install [Mise](https://mise.jdx.dev/installing-mise.html):
+  - macOS: `brew install mise`
+  - Linux: follow the package-manager or installer instructions linked above
+- Restart the shell, then explicitly install the tools declared in the global config: `mise install`
+- The global defaults are Node `24.19.0` and Python `3.12.12`. A project's checked-in `mise.toml` overrides them.
+- Mise replaces NVM, pyenv, jenv, and zvm for runtime selection. Rust remains managed by rustup.
+- Prefer a checked-in `mise.toml` for new projects: `mise use --pin node@24.19.0`
+- Missing tools do not auto-install; run `mise install` after cloning a project or changing its tool versions.
 
 ### Python
-- Install [pip](https://pip.pypa.io/en/stable/installation/#get-pip-py):
-`curl -sS https://bootstrap.pypa.io/get-pip.py | python3`
-- Install [pyenv](https://github.com/pyenv/pyenv):
-`git clone https://github.com/pyenv/pyenv.git $HOME/.pyenv`
-- Install [pyenv-virtualenv](https://github.com/pyenv/pyenv-virtualenv?tab=readme-ov-file#installing-as-a-pyenv-plugin):
-`git clone https://github.com/pyenv/pyenv-virtualenv.git $(pyenv root)/plugins/pyenv-virtualenv`
-- Setup env for [pyenv](https://github.com/pyenv/pyenv/wiki#suggested-build-environment)
-(required to run `pyenv install x.x.x`):
-```
-sudo apt update; sudo apt install build-essential libssl-dev zlib1g-dev \
-libbz2-dev libreadline-dev libsqlite3-dev curl \
-libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
-```
+- Python is managed by Mise. The global version is declared in the Mise config.
+- Prefer a project-local `.venv` for dependencies and isolation.
 
 ### Node
-- Intall [nvm](https://github.com/nvm-sh/nvm):
-`git clone https://github.com/nvm-sh/nvm.git $HOME/.nvm`
-- `nvm install stable && nvm use stable`
+- Node is managed by Mise. Install the globally declared version with `mise install`.
+- Projects must declare their Node version in a checked-in `mise.toml`.
 - NOTE: neovim will complain about not being able to install pyright if missing npm
 
 ### Java
-- Install [jenv](https://github.com/jenv/jenv):
-`git clone https://github.com/jenv/jenv.git ~/.jenv`
-- First time run: `jenv enable-plugin export`
-- Continue following to setup [jenv](https://github.com/jenv/jenv?tab=readme-ov-file#13-adding-your-java-environment)
- - Notes:
-  - When using brew to install java, it will provide the correct symlink command in its output
-  - The provided `jenv add` command does not seem to work, use `jenv add /Library/Java/JavaVirtualMachines/openjdk.jdk/Contents/Home` (after symlinking) instead
-- Example for openjdk version 21 (Mac):
-```
-brew install openjdk@21
-sudo ln -sfn /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-21.jdk
-jenv add /Library/Java/JavaVirtualMachines/openjdk-21.jdk/Contents/Home
-```
-- Example for openjdk version 17 (Linux):
-```
-sudo apt install openjdk-17-jdk
-jenv add /usr/lib/jvm/java-17-openjdk-amd64
-jenv global openjdk64-17.0.17
-```
+- Java is managed by Mise when needed: `mise use --pin java@<version>`.
 
 ### Zig
-- Install [zvm](https://www.zvm.app/guides/install-zvm/):
-`curl https://raw.githubusercontent.com/tristanisham/zvm/master/install.sh | bash`
-- Check for most recent stable version at [zig website](https://ziglang.org/download/)
-- Run: `zvm i --zls <version> && zvm use <version>`
+- Zig and ZLS are managed separately by Mise:
+  `mise use --pin zig@<version> zls@<version>`.

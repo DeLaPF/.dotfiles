@@ -1,49 +1,3 @@
-# Handle path
-BREW_PATH="/opt/homebrew/bin"
-CARGO_ENV_PATH="$HOME/.cargo/env"
-BOB_NVIM_PATH="$HOME/.local/share/bob/nvim-bin"
-LCL_NVIM_PATH="$HOME/.local/share/neovim/bin"
-SCRIPTS_PATH="$HOME/.scripts"
-LCL_GO_PATH="$HOME/.local/share/go/bin"
-JENV_ROOT="$HOME/.jenv"
-ZVM_ROOT="$HOME/.zvm"
-export ZVM_INSTALL="$HOME/.zvm/self"
-export PYENV_ROOT="$HOME/.pyenv"
-export NVM_DIR="$HOME/.nvm"
-# Typst local package dir (cross-platform): matches Linux's default and
-# overrides macOS's ~/Library/Application Support so `@local` resolves the
-# stowed `typst` package identically on both OSes.
-export TYPST_PACKAGE_PATH="$HOME/.local/share/typst/packages"
-
-# Add homebrew to path (if exists)
-[ -d $BREW_PATH ] && path+=($BREW_PATH)
-# Add local nvim to path (if exists) (takes precedence over bob)
-[ -d $LCL_NVIM_PATH ] && path+=($LCL_NVIM_PATH)
-# Load cargo env (if exists)
-[ -f $CARGO_ENV_PATH ] && source $CARGO_ENV_PATH
-# Add bob-nvim to path (if exists)
-[ -d $BOB_NVIM_PATH ] && path+=($BOB_NVIM_PATH)
-# Add .scripts to path (if exists)
-[ -d $SCRIPTS_PATH ] && path+=($SCRIPTS_PATH)
-# Add go to path (if exists)
-[ -d $LCL_GO_PATH ] && path+=($LCL_GO_PATH)
-# Add jenv to path (if exists)
-[ -d $JENV_ROOT/bin ] && path+=("$JENV_ROOT/bin")
-# Add zvm to path (if exists)
-[ -d $ZVM_ROOT/bin ] && path+=("$ZVM_ROOT/bin")
-# Add zvm-install to path (if exists)
-[ -d $ZVM_INSTALL ] && path+=($ZVM_INSTALL)
-# Add pyenv to path (if exists)
-[ -d $PYENV_ROOT/bin ] && path+=("$PYENV_ROOT/bin")
-# Add nvm to path (if exists)
-[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
-path+=($HOME/.local/bin)
-export PATH
-
-# Handle default editor
-export VISUAL=nvim
-export EDITOR="$VISUAL"
-
 # Enable colored ls output
 export CLICOLOR=1
 export LS_COLORS="di=34:ln=36:so=35:pi=33:ex=32:bd=1;33:cd=1;33:su=1;31:sg=1;31:tw=1;34:ow=1;34"
@@ -103,16 +57,6 @@ bindkey '^[e' edit-command-line
 [ -f "$HOME/.addrc" ] && source "$HOME/.addrc"
 # Load sh_funcs (if exists)
 [ -n "$(ls -A $HOME/.sh_funcs 2>/dev/null)" ] && for f in $HOME/.sh_funcs/*; do source $f; done
-
-# Load jenv (if exists)
-[ -d $JENV_ROOT/bin ] && eval "$(jenv init -)"
-
-# Load pyenv (if exists)
-[ -d $PYENV_ROOT ] && eval "$(pyenv init -)"
-[ -d $PYENV_ROOT ] && eval "$(pyenv virtualenv-init -)"
-
-# Load nvm completion (if exists)
-[ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"
 
 # Load direnv (if exists) (trying to replace with internal zenv)
 # (( $+commands[direnv] )) && eval "$(direnv hook zsh)"
