@@ -27,7 +27,18 @@ vim.keymap.set({"n", "v"}, "<leader>d", [["_d]], { desc = "Delete without yank" 
 vim.keymap.set("n", "n", "nzzzv")
 vim.keymap.set("n", "N", "Nzzzv")
 vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>", { desc = "Un-highlight search" })
-vim.keymap.set("n", "<leader>c", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]], { desc = "Change all occurances of hovered word" })
+vim.keymap.set("n", "<leader>c", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]], { desc = "Change all occurrences of hovered word" })
 
-vim.keymap.set("n", "<leader>x", "<cmd>!chmod +x %<CR>", { desc = "Make file executable", silent = true })
+vim.keymap.set("n", "<leader>x", function()
+    local file = vim.api.nvim_buf_get_name(0)
+    if file == "" then
+        vim.notify("Current buffer has no file", vim.log.levels.WARN)
+        return
+    end
+
+    local output = vim.fn.system({ "chmod", "+x", file })
+    if vim.v.shell_error ~= 0 then
+        vim.notify("chmod failed:\n" .. output, vim.log.levels.ERROR)
+    end
+end, { desc = "Make file executable" })
 vim.keymap.set("n", "<leader><leader>x", "<cmd>source %<CR>", { desc = "Execute the current file" })

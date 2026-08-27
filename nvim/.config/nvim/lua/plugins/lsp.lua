@@ -272,7 +272,7 @@ return {
 
                 -- Typesetting. Provides completion/diagnostics/hover/format and,
                 -- with exportPdf below, writes a PDF beside the source on save.
-                -- Resolves `@local` templates via TYPST_PACKAGE_PATH (set in .zshrc).
+                -- Resolves `@local` templates via TYPST_PACKAGE_PATH (set in .zshenv).
                 tinymist = {
                     settings = {
                         exportPdf = "onSave",

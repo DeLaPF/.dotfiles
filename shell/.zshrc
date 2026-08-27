@@ -6,6 +6,7 @@ export LS_COLORS="di=34:ln=36:so=35:pi=33:ex=32:bd=1;33:cd=1;33:su=1;31:sg=1;31:
 HISTSIZE=10000
 SAVEHIST=10000
 HISTFILE=~/.cache/zsh/history
+[[ -d "${HISTFILE:h}" ]] || mkdir -p "${HISTFILE:h}"
 
 # Register interactive commands and completion definitions without parsing
 # their implementations during startup.
@@ -69,10 +70,7 @@ bindkey '^[e' edit-command-line
 # Load device-local interactive setup that does not belong in shared dotfiles.
 [[ -r "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
 
-# Load direnv (if exists) (trying to replace with internal zenv)
-# (( $+commands[direnv] )) && eval "$(direnv hook zsh)"
-
-# Load Starship (if exists). May switch to PS1 in the future
+# Load Starship when present.
 (( $+commands[starship] )) && eval "$(starship init zsh)"
 
 # Load zsh-syntax-highlighting (if exists); should be last.

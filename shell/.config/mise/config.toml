@@ -15,6 +15,14 @@ bob = "4.1.6"
 # Intentionally unpinned globally until needed: java, go, zig, and zls.
 # Bob remains the Neovim owner because it supports source builds.
 
+[vars]
+# Dotfile-managed plugins are pinned separately from Mise-managed executables.
+zsh_syntax_highlighting_ref = "5eb677bb0fa9a3e60f0eff031dc13926e093df92"
+tpm_ref = "99469c4a9b1ccf77fade25842dc7bafbc8ce9946"
+tmux_prefix_highlight_ref = "06cbb4ecd3a0a918ce355c70dc56d79debd455c7"
+tmux_resurrect_ref = "cff343cf9e81983d3da0c8562b01616f12e8d548"
+tmux_continuum_ref = "0698e8f4b17d6454c71bf5212895ec055c578da0"
+
 [settings]
 # Installation should be deliberate, especially in agent and CI shells.
 not_found_auto_install = false
@@ -30,17 +38,21 @@ description = "Install zsh-syntax-highlighting"
 run = '''
 set -eu
 destination="$HOME/.zsh/plugins/zsh-syntax-highlighting"
+ref="{{ vars.zsh_syntax_highlighting_ref }}"
 
-if [ -d "$destination/.git" ]; then
-  exit 0
-fi
-if [ -e "$destination" ]; then
-  echo "Refusing to replace non-git path: $destination" >&2
-  exit 1
+if [ ! -d "$destination/.git" ]; then
+  if [ -e "$destination" ]; then
+    echo "Refusing to replace non-git path: $destination" >&2
+    exit 1
+  fi
+  mkdir -p "${destination%/*}"
+  git clone --depth 1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$destination"
 fi
 
-mkdir -p "${destination%/*}"
-git clone --depth 1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$destination"
+if [ "$(git -C "$destination" rev-parse HEAD)" != "$ref" ]; then
+  git -C "$destination" fetch --depth 1 origin "$ref"
+  git -C "$destination" checkout --detach "$ref"
+fi
 '''
 
 [tasks."dotfiles:tmux-plugins"]
@@ -48,6 +60,15 @@ description = "Install TPM and the plugins declared in ~/.tmux.conf"
 run = '''
 set -eu
 destination="$HOME/.tmux/plugins/tpm"
+
+pin_repo() {
+  repo="$1"
+  ref="$2"
+  if [ "$(git -C "$repo" rev-parse HEAD)" != "$ref" ]; then
+    git -C "$repo" fetch --depth 1 origin "$ref"
+    git -C "$repo" checkout --detach "$ref"
+  fi
+}
 
 if [ ! -d "$destination/.git" ]; then
   if [ -e "$destination" ]; then
@@ -58,5 +79,9 @@ if [ ! -d "$destination/.git" ]; then
   git clone --depth 1 https://github.com/tmux-plugins/tpm "$destination"
 fi
 
+pin_repo "$destination" "{{ vars.tpm_ref }}"
 "$destination/bin/install_plugins"
+pin_repo "$HOME/.tmux/plugins/tmux-prefix-highlight" "{{ vars.tmux_prefix_highlight_ref }}"
+pin_repo "$HOME/.tmux/plugins/tmux-resurrect" "{{ vars.tmux_resurrect_ref }}"
+pin_repo "$HOME/.tmux/plugins/tmux-continuum" "{{ vars.tmux_continuum_ref }}"
 '''

@@ -25,7 +25,9 @@ vim.opt.mouse = ""
 -- undo handling
 vim.opt.swapfile = false
 vim.opt.backup = false
-vim.opt.undodir = os.getenv("HOME") .. "/.cache/nvim/undodir"
+local undodir = vim.fn.stdpath("cache") .. "/undodir"
+vim.fn.mkdir(undodir, "p")
+vim.opt.undodir = undodir
 vim.opt.undofile = true
 
 vim.opt.inccommand = "split"

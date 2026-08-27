@@ -1,113 +1,103 @@
-# My Config files (dotfiles, nvim, etc.)
+# Dotfiles
 
-## Requirements:
-- GNU stow (otherwise manual symlink)
-- neovim v0.11.4 or above (otherwise don't include `nvim` in stow command)
-- tmux v3.4 (otherwise ERROR: `invalid option: allow-passthrough`)
+Personal macOS/Linux configuration managed with GNU Stow. Zsh owns shell
+startup; Mise owns portable executables and runtime versions.
 
-## Dotfiles
-For simplest setup clone to `$HOME/.dotfiles` (i.e. clone in `~` dir)
-- Run `stow nvim shell` from repo root
-- To remove configs run `stow -D nvim shell` from repo root
+## Setup
 
-If cloned elsewhere:
-- Run `stow -t $HOME nvim shell` from repo root
-- To remove configs run `stow -Dt $HOME nvim shell` from repo root
+```sh
+# macOS
+brew install stow tmux mise
 
-## Env and Dependencies
-### Pre
-- `sudo apt update`
+# Debian/Ubuntu
+sudo apt update
+sudo apt install -y git stow zsh tmux
+# Install Mise from https://mise.jdx.dev/installing-mise.html
+```
 
-### GNU Stow (manage dotfiles)
-- `sudo apt install -y stow`
+Tmux 3.4 or newer is required.
 
-### Native Build Tools
-- `sudo apt install -y build-essential cmake`
+```sh
+git clone git@github.com:DeLaPF/.dotfiles.git ~/.dotfiles
+cd ~/.dotfiles
+stow nvim shell
 
-### Typst (Typesetting / document authoring → PDF)
-- Typst is installed at the globally pinned version through Mise.
-- The `tinymist` language server (completion, diagnostics, format, PDF export on save) auto-installs
-  via Mason the first time you open a `.typ` file in neovim. Live preview via `typst-preview.nvim`.
-- In a `.typ` buffer (localleader is `\`): `\p` toggle preview · `\e` export PDF · `\o` open PDF · `\f` format.
-- Three local templates live in the `shell` package (`~/.local/share/typst/packages/local/`) and
-  resolve via `TYPST_PACKAGE_PATH` (set in `.zshenv`), so they import identically on macOS and Linux:
-  - `#import "@local/letter:0.1.0": letter` — business letter
-  - `#import "@local/doc:0.1.0": doc` — basic document (or just write plain typst)
-  - `#import "@local/slides:0.1.0": slides, title-slide, slide` — minimal 16:9 deck
-- Starter examples to open + preview: `~/typst/{letter,doc,slides}.typ`.
+chsh -s "$(command -v zsh)"
+exec zsh
 
-### Tmux (Terminal multiplexer/window manager)
-- `sudo apt install -y tmux`
-- [TPM](https://github.com/tmux-plugins/tpm) and the plugins declared in `.tmux.conf`
-  are installed by `mise run dotfiles:setup`.
+mise install
+mise run dotfiles:setup
+bob install stable && bob use stable
+```
 
-### Zsh
-- `sudo apt install zsh`
-- `sudo chsh $USER /usr/bin/zsh`
-- Commands in `~/.config/zsh/functions` are autoloaded on first use. `.zshenv`
-  registers commands needed by scripts and agents; `.zshrc` adds interactive commands and completions.
-- Zenv is the eager directory-environment plugin. Use `zenv status`, `zenv allow`,
-  `zenv deny`, and `zenv reload` to inspect and manage the nearest `.envrc`.
-- Put unshared, device-specific exports and PATH setup in `~/.zshenv.local`; it is sourced by every zsh.
-- Put unshared, device-specific interactive setup in `~/.zshrc.local`; it is sourced only interactively.
-#### Highlighting (For "Fish-like" syntax hightlighting)
-- [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting) is installed by
-  `mise run dotfiles:setup` and loaded last by `.zshrc` when present.
+When cloned elsewhere, add `-t "$HOME"` to Stow. Remove the links with
+`stow -D nvim shell`.
 
-### Rust and Cargo
-- Install the Rust toolchain with [rustup](https://www.rust-lang.org/tools/install):
-`curl -sSf https://sh.rustup.rs | sh`
-- Cargo ships with the selected Rust toolchain. Use it for Rust projects and source-build fallbacks,
-  not as the default owner of standalone global CLIs that publish binaries.
+## Shell
 
-### Starship
-- Starship is installed at the globally pinned version through Mise.
+- `.zshenv` provides universal PATH, exports, core commands, Zenv, and Mise to
+  terminals, scripts, editors, and agents.
+- `.zshrc` adds interactive aliases, completion, keybindings, Starship, and
+  syntax highlighting.
+- Device-only configuration belongs in `~/.zshenv.local` or `~/.zshrc.local`.
+- Functions are autoloaded from `~/.config/zsh/functions`; `refr` replaces the
+  current shell after configuration changes.
+- Zenv loads the nearest trusted `.envrc`: `zenv status|allow|deny|reload`.
+- Optional `.cmdsrc`/`.linksrc` files use `[group|alias]` headings (`!` hides a
+  group) and `label :: command`/`label URL` entries.
 
-### Neovim
-- [Bob](https://github.com/MordechaiHadad/bob) currently owns the Neovim installation
-  (`bob install stable && bob use stable`); the Bob executable is installed through Mise.
-- Bob remains the intentional owner because it supports stable/nightly releases, exact versions,
-  commits, and source builds. Source builds require Git, CMake, and Clang or GCC on Unix.
+`mise run dotfiles:setup` installs the pinned Zsh and tmux plugins.
 
-#### Build Neovim from source through Bob
-- Install the [Neovim build prerequisites](https://github.com/neovim/neovim/blob/master/BUILD.md):
-  Git, CMake, a Clang or GCC toolchain, and the platform-specific build dependencies.
-- Resolve the desired Neovim commit (for example, from the `stable` branch), then run:
-  `bob install <commit-hash> && bob use <commit-hash>`.
-- Set `enable_release_build = true` in Bob's configuration when the source build should be
-  optimized and omit debug information.
+## Tool ownership
 
-### Mise (version-managed tools)
-- Install [Mise](https://mise.jdx.dev/installing-mise.html):
-  - macOS: `brew install mise`
-  - Linux: follow the package-manager or installer instructions linked above
-- Restart the shell, then explicitly install the tools declared in the global config: `mise install`
-- Install the shell and tmux plugins declared by the dotfiles: `mise run dotfiles:setup`
-- The global config pins Node, Python, uv, pnpm, Starship, Typst, ripgrep, fzf, Bat, GitHub CLI, and Bob.
-  A project's checked-in `mise.toml` overrides any global tool version.
-- Mise replaces NVM, pyenv, jenv, and zvm for runtime selection. Rust remains managed by rustup.
-- Prefer checked-in, exact project pins: `mise use --pin <tool>@<version>`.
-- Missing tools do not auto-install; run `mise install` after cloning a project or changing its tool versions.
-- Tool-specific notes:
-  - Mise provides the global Python and uv executables; uv owns project dependencies, lockfiles,
-    and `.venv` directories.
-  - Each project should choose one Python runtime owner. Multi-tool projects should pin Python in
-    `mise.toml` and use uv for the environment. Python-centric projects may instead omit Python
-    from `mise.toml` and let uv select/install it from `.python-version` and `requires-python`.
-  - Global pnpm is the convenient default; Node projects should pin Node and pnpm together.
-    Neovim also needs npm to install Pyright.
-  - Authenticate GitHub CLI once with `gh auth login`; Mise only owns the executable.
-  - Bat provides syntax-highlighted fzf previews for `glg`.
-  - Go and Java have no global default yet; projects that need them should pin them.
-  - Zig and ZLS have no global default yet; they are separate tools and should be pinned together.
+| Owner | Tools |
+| --- | --- |
+| Mise | Node, Python, uv, pnpm, Starship, Typst, ripgrep, fzf, Bat, GitHub CLI, Bob |
+| Bob | Neovim stable/nightly, exact versions, commits, and source builds |
+| Mason | Neovim LSPs and editor-only tools |
+| [rustup](https://www.rust-lang.org/tools/install) | Rust and Cargo |
+| Homebrew/apt | tmux, Stow, and native build tools |
+| Native installers | gcloud, Docker, and Xcode |
 
-#### Tool ownership roadmap
+Projects override global Mise versions with a checked-in `mise.toml`. Prefer
+`mise use --pin TOOL@VERSION`; missing tools never auto-install. Java, Go, Zig,
+and ZLS have no global defaults yet and should be pinned when needed.
 
-| Owner | Tools | Direction |
-| --- | --- | --- |
-| Mise now | Node, Python, uv, pnpm, Starship, Typst, ripgrep, fzf, Bat, GitHub CLI, Bob | Global defaults plus exact project overrides. |
-| Mise when needed | Java, Go, Zig, ZLS | No global pins yet; add deliberately or pin per project. |
-| rustup | Rust, Cargo | Rust toolchains and project components; Cargo comes with Rust. |
-| Bob | Neovim | Intentional owner, including source-build support. |
-| Homebrew/apt | tmux, Stow, native build tools | Keep system-linked tools native. |
-| Vendor/native installers | gcloud, Docker, Xcode | Keep component managers, daemons, authentication, and platform integration native. |
+Node projects should pin Node and pnpm together. Mise provides global Python
+and uv; uv owns project dependencies, locks, and `.venv`. Python-centric
+projects may instead let uv own Python via `.python-version` and
+`requires-python`.
+
+Standalone Python dependencies use PEP 723 metadata:
+
+```sh
+uv add --script file.py package
+uv run file.py
+uv lock --script file.py  # optional
+```
+
+`plg --help` carries the same reminder.
+
+## Neovim and Typst
+
+Bob installs Neovim 0.11.4 or newer; `lazy-lock.json` pins its plugins. Source
+builds need the platform's
+[Neovim prerequisites](https://github.com/neovim/neovim/blob/master/BUILD.md),
+then `bob install COMMIT && bob use COMMIT`. Set `enable_release_build = true`
+in Bob's config for an optimized build.
+
+Mise installs Typst and Mason installs Tinymist. In Typst buffers, `\p` toggles
+preview, `\e` exports, `\o` opens the PDF, and `\f` formats. Local packages are:
+
+```typst
+#import "@local/letter:0.1.0": letter
+#import "@local/doc:0.1.0": doc
+#import "@local/slides:0.1.0": slides, title-slide, slide
+```
+
+## Updating
+
+- Bump Mise tool versions or plugin refs, then run `mise install` and
+  `mise run dotfiles:setup`.
+- Update Neovim plugins with `:Lazy update` and commit `lazy-lock.json`.
+- Move Neovim with `bob install VERSION && bob use VERSION`.

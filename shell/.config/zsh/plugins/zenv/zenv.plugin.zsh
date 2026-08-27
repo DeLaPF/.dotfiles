@@ -10,27 +10,55 @@
 # HOOK: if .envrc defines a function named `zenv_deactivate`, it runs
 # on unload before env/aliases/funcs are restored.
 
-# Tracks only what .envrc changed (added or modified)
+# Tracks only what .envrc added, modified, or removed.
 typeset -gA _zenv_added_env       # key -> ""  (new vars to unset on restore)
 typeset -gA _zenv_changed_env     # key -> old_value  (changed vars to restore)
+typeset -gA _zenv_removed_env     # key -> old_value  (removed vars to restore)
 typeset -gA _zenv_added_aliases   # key -> ""
 typeset -gA _zenv_changed_aliases # key -> old_value
+typeset -gA _zenv_removed_aliases # key -> old_value
 typeset -gA _zenv_added_funcs     # key -> ""
 typeset -gA _zenv_changed_funcs   # key -> old_body
+typeset -gA _zenv_removed_funcs   # key -> old_body
 typeset -g _zenv_loaded_dir=""
 typeset -g _zenv_loaded_hash=""
+typeset -g _zenv_warned_hash=""
 typeset -g _zenv_loading=""  # guard so the cd into .envrc dir doesn't re-trigger the hook
 typeset -g _zenv_allow_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zenv/allowed"
 
 # --- Security ---
 
 _zenv_hash() {
-    shasum -a 256 "$1" 2>/dev/null | cut -d' ' -f1
+    local digest
+    if (( $+commands[shasum] )); then
+        digest=$(shasum -a 256 "$1" 2>/dev/null) || return
+    elif (( $+commands[sha256sum] )); then
+        digest=$(sha256sum "$1" 2>/dev/null) || return
+    else
+        echo "zenv: shasum or sha256sum is required" >&2
+        return 127
+    fi
+    echo "${digest%% *}"
+}
+
+_zenv_hash_text() {
+    local digest
+    if (( $+commands[shasum] )); then
+        digest=$(shasum -a 256) || return
+    elif (( $+commands[sha256sum] )); then
+        digest=$(sha256sum) || return
+    else
+        echo "zenv: shasum or sha256sum is required" >&2
+        return 127
+    fi
+    echo "${digest%% *}"
 }
 
 _zenv_allow_file() {
     local dir="${1:A}"
-    echo "$_zenv_allow_dir/$(echo "$dir" | shasum -a 256 | cut -d' ' -f1)"
+    local digest
+    digest=$(printf '%s\n' "$dir" | _zenv_hash_text) || return
+    echo "$_zenv_allow_dir/$digest"
 }
 
 _zenv_allow() {
@@ -45,8 +73,11 @@ _zenv_allow() {
         }
     fi
     local envrc="$envrc_dir/.envrc"
+    local hash allow_file
+    hash=$(_zenv_hash "$envrc") || return
+    allow_file=$(_zenv_allow_file "$envrc_dir") || return
     mkdir -p "$_zenv_allow_dir"
-    _zenv_hash "$envrc" > "$(_zenv_allow_file "$envrc_dir")"
+    echo "$hash" > "$allow_file"
     echo "zenv: allowed $envrc"
     _zenv_hook
 }
@@ -77,11 +108,12 @@ _zenv_is_allowed() {
 
 _zenv_diff() {
     # Capture env before
-    local -A before_env before_aliases before_funcs
-    local key val
-    while IFS='=' read -r key val; do
-        before_env[$key]="$val"
-    done < <(env)
+    local -A before_env before_aliases before_funcs after_env
+    local key source_status
+    for key in ${(k)parameters}; do
+        [[ "${parameters[$key]}" == *export* ]] || continue
+        before_env[$key]="${(P)key}"
+    done
     before_aliases=(${(kv)aliases})
     before_funcs=()
     for key in ${(k)functions}; do
@@ -93,9 +125,13 @@ _zenv_diff() {
     # against it, not against $PWD (which may be a subdir).
     local _prev_pwd="$PWD" _prev_oldpwd="$OLDPWD"
     _zenv_loading=1
-    cd "${1:h}"
+    cd "${1:h}" || {
+        _zenv_loading=""
+        return 1
+    }
     {
         source "$1"
+        source_status=$?
     } always {
         cd "$_prev_pwd"
         OLDPWD="$_prev_oldpwd"  # undo the OLDPWD side effect of the cd round-trip
@@ -105,17 +141,27 @@ _zenv_diff() {
     # Diff env vars
     _zenv_added_env=()
     _zenv_changed_env=()
-    while IFS='=' read -r key val; do
+    _zenv_removed_env=()
+    for key in ${(k)parameters}; do
+        [[ "${parameters[$key]}" == *export* ]] || continue
+        after_env[$key]="${(P)key}"
+    done
+    for key in ${(k)after_env}; do
         if [[ -z "${before_env[$key]+x}" ]]; then
             _zenv_added_env[$key]=""
-        elif [[ "${before_env[$key]}" != "$val" ]]; then
+        elif [[ "${before_env[$key]}" != "${after_env[$key]}" ]]; then
             _zenv_changed_env[$key]="${before_env[$key]}"
         fi
-    done < <(env)
+    done
+    for key in ${(k)before_env}; do
+        [[ -n "${after_env[$key]+x}" ]] ||
+            _zenv_removed_env[$key]="${before_env[$key]}"
+    done
 
     # Diff aliases
     _zenv_added_aliases=()
     _zenv_changed_aliases=()
+    _zenv_removed_aliases=()
     for key in ${(k)aliases}; do
         if [[ -z "${before_aliases[$key]+x}" ]]; then
             _zenv_added_aliases[$key]=""
@@ -123,10 +169,15 @@ _zenv_diff() {
             _zenv_changed_aliases[$key]="${before_aliases[$key]}"
         fi
     done
+    for key in ${(k)before_aliases}; do
+        [[ -n "${aliases[$key]+x}" ]] ||
+            _zenv_removed_aliases[$key]="${before_aliases[$key]}"
+    done
 
     # Diff functions
     _zenv_added_funcs=()
     _zenv_changed_funcs=()
+    _zenv_removed_funcs=()
     for key in ${(k)functions}; do
         [[ "$key" = _zenv_* || "$key" = zenv-* ]] && continue
         if [[ -z "${before_funcs[$key]+x}" ]]; then
@@ -135,6 +186,12 @@ _zenv_diff() {
             _zenv_changed_funcs[$key]="${before_funcs[$key]}"
         fi
     done
+    for key in ${(k)before_funcs}; do
+        [[ -n "${functions[$key]+x}" ]] ||
+            _zenv_removed_funcs[$key]="${before_funcs[$key]}"
+    done
+
+    return "$source_status"
 }
 
 _zenv_restore() {
@@ -147,6 +204,9 @@ _zenv_restore() {
     for key in ${(k)_zenv_changed_env}; do
         export "$key"="${_zenv_changed_env[$key]}"
     done
+    for key in ${(k)_zenv_removed_env}; do
+        export "$key"="${_zenv_removed_env[$key]}"
+    done
 
     # Aliases: unset added, restore changed
     for key in ${(k)_zenv_added_aliases}; do
@@ -154,6 +214,9 @@ _zenv_restore() {
     done
     for key in ${(k)_zenv_changed_aliases}; do
         alias "$key"="${_zenv_changed_aliases[$key]}"
+    done
+    for key in ${(k)_zenv_removed_aliases}; do
+        alias "$key"="${_zenv_removed_aliases[$key]}"
     done
 
     # Functions: unset added, restore changed
@@ -163,6 +226,19 @@ _zenv_restore() {
     for key in ${(k)_zenv_changed_funcs}; do
         functions[$key]="${_zenv_changed_funcs[$key]}"
     done
+    for key in ${(k)_zenv_removed_funcs}; do
+        functions[$key]="${_zenv_removed_funcs[$key]}"
+    done
+
+    _zenv_added_env=()
+    _zenv_changed_env=()
+    _zenv_removed_env=()
+    _zenv_added_aliases=()
+    _zenv_changed_aliases=()
+    _zenv_removed_aliases=()
+    _zenv_added_funcs=()
+    _zenv_changed_funcs=()
+    _zenv_removed_funcs=()
 }
 
 # --- Load / Unload ---
@@ -207,9 +283,18 @@ _zenv_status() {
 
 _zenv_load() {
     local dir="$1"
-    _zenv_loaded_dir="$dir"
-    _zenv_loaded_hash=$(_zenv_hash "$dir/.envrc")
+    local hash load_status
+    hash=$(_zenv_hash "$dir/.envrc") || return
     _zenv_diff "$dir/.envrc"
+    load_status=$?
+    if (( load_status != 0 )); then
+        _zenv_restore
+        echo "zenv: failed to load $dir/.envrc (status $load_status)" >&2
+        return "$load_status"
+    fi
+    _zenv_loaded_dir="$dir"
+    _zenv_loaded_hash="$hash"
+    _zenv_warned_hash=""
     echo "zenv: loaded $dir/.envrc"
 }
 
@@ -223,6 +308,7 @@ _zenv_unload() {
     echo "zenv: unloaded $_zenv_loaded_dir/.envrc"
     _zenv_loaded_dir=""
     _zenv_loaded_hash=""
+    _zenv_warned_hash=""
 }
 
 # --- Hook ---
@@ -234,7 +320,7 @@ _zenv_hook() {
 
     if [ $? -ne 0 ]; then
         [ -n "$_zenv_loaded_dir" ] && _zenv_unload
-        return
+        return 0
     fi
 
     # Still in subdirectory of loaded envrc
@@ -244,9 +330,12 @@ _zenv_hook() {
             if _zenv_is_allowed "$envrc_dir"; then
                 _zenv_unload
                 _zenv_load "$envrc_dir"
-            else
+            elif [ "$current_hash" != "$_zenv_warned_hash" ]; then
                 echo "zenv: .envrc changed, run 'zenv allow' to reload"
+                _zenv_warned_hash="$current_hash"
             fi
+        else
+            _zenv_warned_hash=""
         fi
         return
     fi
@@ -270,9 +359,9 @@ _zenv_precmd() {
     if _zenv_is_allowed "$_zenv_loaded_dir"; then
         _zenv_unload
         _zenv_load "$_zenv_loaded_dir"
-    else
+    elif [ "$current_hash" != "$_zenv_warned_hash" ]; then
         echo "zenv: .envrc changed, run 'zenv allow' to reload"
-        _zenv_loaded_hash="$current_hash"  # avoid repeating the message
+        _zenv_warned_hash="$current_hash"
     fi
 }
 

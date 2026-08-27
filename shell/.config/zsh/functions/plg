@@ -1,11 +1,18 @@
 emulate -L zsh
 
 local playground_dir="$HOME/dev/playground"
-local name extension
+local name extension file editor_status
+local new_file=0
 name=$(date '+%Y%m%d%H%M')
 extension=''
 
-case "$1" in
+case "${1:-py}" in
+  help|-h|--help)
+    printf '%s\n' \
+      'Usage: plg [py|python|name.py]' \
+      'Deps: uv add --script FILE PACKAGE; run: uv run FILE'
+    return
+    ;;
   python|py)
     playground_dir="$playground_dir/python"
     extension=py
@@ -25,4 +32,12 @@ esac
 
 [[ -d "$playground_dir" ]] || mkdir -p "$playground_dir" || return
 cd "$playground_dir" || return
-"$EDITOR" "$name.$extension"
+file="$name.$extension"
+[[ -e "$file" ]] || new_file=1
+"$EDITOR" "$file"
+editor_status=$?
+
+if (( editor_status == 0 && new_file )); then
+  printf 'uv: add deps with `uv add --script %s PACKAGE`; run with `uv run %s`\n' "$file" "$file"
+fi
+return "$editor_status"
