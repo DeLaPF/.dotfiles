@@ -1,0 +1,14 @@
+emulate -L zsh
+
+if (( ${argv[(I)-g]} || ${argv[(I)--global]} )); then
+  local version
+  version="$(command pnpm --version)" || return
+
+  autoload -Uz is-at-least
+  if ! is-at-least 11 "$version"; then
+    printf 'pnpm: global commands require pnpm 11+; leave the project first\n' >&2
+    return 1
+  fi
+fi
+
+command pnpm "$@"

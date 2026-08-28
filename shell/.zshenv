@@ -3,12 +3,17 @@ typeset -U path PATH
 typeset -U fpath FPATH
 typeset -a _zshenv_path
 typeset _zshenv_mise_data="${XDG_DATA_HOME:-$HOME/.local/share}/mise"
+export PNPM_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/pnpm"
+
+_zshenv_path=(
+  "$_zshenv_mise_data/shims"
+  "$PNPM_HOME/bin"
+)
 
 # Static executable locations belong here so scripts, editors, and agents see
 # the same commands as interactive terminals. Runtime-specific paths come from
 # Mise rather than individual version managers.
 for _zshenv_dir in \
-  "$_zshenv_mise_data/shims" \
   "$HOME/.local/share/bob/nvim-bin" \
   "$HOME/.scripts" \
   "$HOME/.cargo/bin" \
@@ -19,6 +24,10 @@ do
   [[ -d "$_zshenv_dir" ]] && _zshenv_path+=("$_zshenv_dir")
 done
 
+# Remove inherited copies before prepending so nested shells keep this order.
+for _zshenv_dir in $_zshenv_path; do
+  path=(${path:#"$_zshenv_dir"})
+done
 path=($_zshenv_path $path)
 export PATH
 unset _zshenv_path _zshenv_dir
@@ -34,7 +43,7 @@ typeset _zshenv_functions="$HOME/.config/zsh/functions"
 if [[ -d "$_zshenv_functions" ]]; then
   fpath=("$_zshenv_functions" $fpath)
   typeset -a req_universal=(
-    bare-clone gcb gwt grs gpo
+    bare-clone gcb gwt grs gpo pnpm
     _gwt_post_create _link
   )
   autoload -Uz $req_universal

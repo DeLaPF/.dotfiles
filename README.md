@@ -68,6 +68,13 @@ and uv; uv owns project dependencies, locks, and `.venv`. Python-centric
 projects may instead let uv own Python via `.python-version` and
 `requires-python`.
 
+Mise provides TypeScript 6 only as the `typescript-tools.nvim` fallback;
+project-local TypeScript versions take precedence.
+
+Global pnpm executables live in `$PNPM_HOME/bin`. A shell guard rejects global
+commands under project-pinned pnpm versions older than 11; leave the project to
+use the global Mise version instead.
+
 Standalone Python dependencies use PEP 723 metadata:
 
 ```sh
