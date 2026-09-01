@@ -281,6 +281,13 @@ _zenv_status() {
     echo "zenv: $state $envrc_dir/.envrc"
 }
 
+_zenv_notice() {
+    # Shell startup and captured commands must not write state notices into
+    # their caller's output. Interactive directory changes may stay visible.
+    [[ -z "${_zenv_quiet:-}" && -o interactive && -t 1 ]] || return 0
+    echo "$@"
+}
+
 _zenv_load() {
     local dir="$1"
     local hash load_status
@@ -295,7 +302,7 @@ _zenv_load() {
     _zenv_loaded_dir="$dir"
     _zenv_loaded_hash="$hash"
     _zenv_warned_hash=""
-    echo "zenv: loaded $dir/.envrc"
+    _zenv_notice "zenv: loaded $dir/.envrc"
 }
 
 _zenv_unload() {
@@ -305,7 +312,7 @@ _zenv_unload() {
         zenv_deactivate
     fi
     _zenv_restore
-    echo "zenv: unloaded $_zenv_loaded_dir/.envrc"
+    _zenv_notice "zenv: unloaded $_zenv_loaded_dir/.envrc"
     _zenv_loaded_dir=""
     _zenv_loaded_hash=""
     _zenv_warned_hash=""
@@ -314,6 +321,8 @@ _zenv_unload() {
 # --- Hook ---
 
 _zenv_hook() {
+    local _zenv_quiet="${1:-}"
+    [[ -o interactive && -t 1 ]] || _zenv_quiet=1
     [ -n "$_zenv_loading" ] && return
     local envrc_dir
     envrc_dir=$(_zenv_find_envrc "$PWD")
@@ -331,7 +340,7 @@ _zenv_hook() {
                 _zenv_unload
                 _zenv_load "$envrc_dir"
             elif [ "$current_hash" != "$_zenv_warned_hash" ]; then
-                echo "zenv: .envrc changed, run 'zenv allow' to reload"
+                _zenv_notice "zenv: .envrc changed, run 'zenv allow' to reload"
                 _zenv_warned_hash="$current_hash"
             fi
         else
@@ -346,7 +355,7 @@ _zenv_hook() {
     if _zenv_is_allowed "$envrc_dir"; then
         _zenv_load "$envrc_dir"
     else
-        echo "zenv: blocked $envrc_dir/.envrc (run 'zenv allow' to trust)"
+        _zenv_notice "zenv: blocked $envrc_dir/.envrc (run 'zenv allow' to trust)"
     fi
 }
 
@@ -360,7 +369,7 @@ _zenv_precmd() {
         _zenv_unload
         _zenv_load "$_zenv_loaded_dir"
     elif [ "$current_hash" != "$_zenv_warned_hash" ]; then
-        echo "zenv: .envrc changed, run 'zenv allow' to reload"
+        _zenv_notice "zenv: .envrc changed, run 'zenv allow' to reload"
         _zenv_warned_hash="$current_hash"
     fi
 }
@@ -400,5 +409,6 @@ autoload -Uz add-zsh-hook
 add-zsh-hook chpwd _zenv_hook
 add-zsh-hook precmd _zenv_precmd
 
-# Run on initial load in case shell starts in a dir with .envrc
+# Run on initial load in case shell starts in a dir with .envrc. Notices are
+# emitted only when this is a genuinely interactive terminal.
 _zenv_hook

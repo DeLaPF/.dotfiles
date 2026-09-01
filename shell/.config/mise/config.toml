@@ -27,8 +27,6 @@ tmux_continuum_ref = "0698e8f4b17d6454c71bf5212895ec055c578da0"
 [settings]
 # Installation should be deliberate, especially in agent and CI shells.
 not_found_auto_install = false
-# Never substitute an unrelated Homebrew/system binary for a missing managed tool.
-not_found_system_fallback = false
 
 [settings.npm]
 # Preserve the conventional global layout expected by typescript-tools.nvim.

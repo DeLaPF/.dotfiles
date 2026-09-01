@@ -1,37 +1,13 @@
 # Environment shared by interactive and non-interactive zsh processes.
-typeset -U path PATH
 typeset -U fpath FPATH
-typeset -a _zshenv_path
-typeset _zshenv_mise_data="${XDG_DATA_HOME:-$HOME/.local/share}/mise"
 export PNPM_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/pnpm"
 
-_zshenv_path=(
-  "$_zshenv_mise_data/shims"
-  "$PNPM_HOME/bin"
-)
-
-# Static executable locations belong here so scripts, editors, and agents see
+# Static executable locations load here so scripts, editors, and agents see
 # the same commands as interactive terminals. Runtime-specific paths come from
 # Mise rather than individual version managers.
-for _zshenv_dir in \
-  "$HOME/.local/share/bob/nvim-bin" \
-  "$HOME/.scripts" \
-  "$HOME/.cargo/bin" \
-  "$HOME/.local/bin" \
-  /opt/homebrew/bin \
-  /home/linuxbrew/.linuxbrew/bin
-do
-  [[ -d "$_zshenv_dir" ]] && _zshenv_path+=("$_zshenv_dir")
-done
-
-# Remove inherited copies before prepending so nested shells keep this order.
-for _zshenv_dir in $_zshenv_path; do
-  path=(${path:#"$_zshenv_dir"})
-done
-path=($_zshenv_path $path)
-export PATH
-unset _zshenv_path _zshenv_dir
-unset _zshenv_mise_data
+typeset _zshenv_path_config="$HOME/.config/zsh/path.zsh"
+[[ -r "$_zshenv_path_config" ]] && source "$_zshenv_path_config"
+unset _zshenv_path_config
 
 # Load unshared, device-specific exports and PATH setup after the shared base.
 # Keep this file silent because every zsh process sources it.

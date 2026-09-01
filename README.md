@@ -37,6 +37,7 @@ When cloned elsewhere, add `-t "$HOME"` to Stow. Remove the links with
 
 - `.zshenv` provides universal PATH, exports, core commands, Zenv, and Mise to
   terminals, scripts, editors, and agents.
+- `.zprofile` restores Mise precedence after macOS login-shell `path_helper`.
 - `.zshrc` adds interactive aliases, completion, keybindings, Starship, and
   syntax highlighting.
 - Device-only configuration belongs in `~/.zshenv.local` or `~/.zshrc.local`.
