@@ -1,0 +1,34 @@
+emulate -L zsh
+
+local repo_dir="$1"
+local requested_name="$2"
+local current_branch="$3"
+local date_stamp time_stamp candidate
+local -a candidates
+
+date_stamp=$(date +%Y_%m_%d)
+time_stamp=$(date +%H_%M)
+
+if [[ -n "$requested_name" ]]; then
+  candidates=(
+    "${USER}__${requested_name}"
+    "${USER}__${requested_name}__${date_stamp}"
+    "${USER}__${requested_name}__${date_stamp}__${time_stamp}"
+  )
+else
+  candidates=(
+    "${USER}__${date_stamp}"
+    "${USER}__${date_stamp}__${time_stamp}"
+  )
+fi
+
+for candidate in $candidates; do
+  if [[ "$candidate" == "$current_branch" ]] ||
+      ! git -C "$repo_dir/.bare" show-ref --verify --quiet "refs/heads/$candidate"; then
+    printf '%s\n' "$candidate"
+    return 0
+  fi
+done
+
+printf 'Error: all worktree names for this minute already exist\n' >&2
+return 1

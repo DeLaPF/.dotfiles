@@ -19,13 +19,18 @@ typeset _zshenv_functions="$HOME/.config/zsh/functions"
 if [[ -d "$_zshenv_functions" ]]; then
   fpath=("$_zshenv_functions" $fpath)
   typeset -a req_universal=(
-    bare-clone gcb gwt grs gpo pnpm
-    _gwt_post_create _link
+    gcb grs gpo pnpm _link
   )
   autoload -Uz $req_universal
   unset req_universal
 fi
 unset _zshenv_functions
+
+# Worktree commands are packaged separately so they can be shared without the
+# rest of these dotfiles.
+typeset _zshenv_worktrees="$HOME/.config/zsh/plugins/worktrees/worktrees.plugin.zsh"
+[[ -r "$_zshenv_worktrees" ]] && source "$_zshenv_worktrees"
+unset _zshenv_worktrees
 
 export VISUAL=nvim
 export EDITOR="$VISUAL"

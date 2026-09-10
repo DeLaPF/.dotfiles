@@ -49,6 +49,26 @@ When cloned elsewhere, add `-t "$HOME"` to Stow. Remove the links with
 
 `mise run dotfiles:setup` installs the pinned Zsh and tmux plugins.
 
+## Worktrees
+
+The `worktrees` plugin provides `bare-clone` and `gwt` and is installed by the
+normal `stow shell`. To use it without the rest of these dotfiles, copy
+`shell/.config/zsh/plugins/worktrees` to `~/.config/zsh/plugins/`, then add this
+to `~/.zshenv` so terminals and agents both load it:
+
+```zsh
+source "$HOME/.config/zsh/plugins/worktrees/worktrees.plugin.zsh"
+```
+
+`bare-clone URL` creates `repo/.bare` plus an initial worktree for the default
+branch. From any worktree, `gwt -c [name] [base]` creates a sibling branch and
+worktree. A named worktree starts as `USER__name`, adding `__YYYY_MM_DD` and
+then `__HH_MM` only on collisions. Without a name, it starts as
+`USER__YYYY_MM_DD` and adds the time on collision. `gwt -m name` renames the
+current branch and worktree using the same ladder. Optional `.ctx/` contents
+are copied into new worktrees; executable `.worktree-hooks/on-create` and
+`on-remove` scripts run around creation and removal.
+
 ## Tool ownership
 
 | Owner | Tools |

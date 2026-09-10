@@ -14,14 +14,9 @@ local hook_dir="$repo_dir/.worktree-hooks"
 
 case "$1" in
   -c)
-    local date_short time_short worktree_name start_point
-    date_short=$(date +%m%d)
-    time_short=$(date +%H%M)
-    if [[ -n "$2" ]]; then
-      worktree_name="${USER}__${2}__${date_short}"
-    else
-      worktree_name="${USER}__${date_short}__${time_short}"
-    fi
+    local requested_name="$2"
+    local worktree_name start_point
+    worktree_name=$(_gwt_branch_name "$repo_dir" "$requested_name") || return
     start_point="${3:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null)}"
     git -C "$repo_dir/.bare" worktree add "$repo_dir/$worktree_name" -b "$worktree_name" "$start_point" &&
       _gwt_post_create "$repo_dir" "$hook_dir" "$repo_dir/$worktree_name"
@@ -52,23 +47,29 @@ case "$1" in
       printf 'Usage: gwt -m <name>\n' >&2
       return 1
     fi
-    local worktree_path date_short worktree_name
+    local worktree_path current_branch worktree_name target_path
     worktree_path=$(git rev-parse --show-toplevel 2>/dev/null) || {
       printf 'Error: not inside a worktree\n' >&2
       return 1
     }
-    date_short=$(date +%m%d)
-    worktree_name="${USER}__${new_name}__${date_short}"
-    git -C "$worktree_path" branch -m "$worktree_name" &&
-      git -C "$repo_dir/.bare" worktree move "$worktree_path" "$repo_dir/$worktree_name" &&
-      cd "$repo_dir/$worktree_name"
+    current_branch=$(git -C "$worktree_path" branch --show-current) || return
+    worktree_name=$(_gwt_branch_name "$repo_dir" "$new_name" "$current_branch") || return
+    target_path="$repo_dir/$worktree_name"
+
+    if [[ "$current_branch" != "$worktree_name" ]]; then
+      git -C "$worktree_path" branch -m "$worktree_name" || return
+    fi
+    if [[ "${worktree_path:A}" != "${target_path:A}" ]]; then
+      git -C "$repo_dir/.bare" worktree move "$worktree_path" "$target_path" || return
+    fi
+    cd "$target_path"
     ;;
   *)
     printf '%s\n' \
       'Usage: gwt <command>' \
-      '  -c [name] [base]   Create new worktree (name optional, base defaults to current branch)' \
+      '  -c [name] [base]   Create new worktree (base defaults to current branch)' \
       '  -e <branch>        Check out existing branch into a new worktree' \
-      '  -m <name>          Rename current worktree (and its branch) to USER__name__MMDD' \
+      '  -m <name>          Rename current worktree and branch using the -c naming ladder' \
       '  -r [--force]       Remove current worktree'
     ;;
 esac
