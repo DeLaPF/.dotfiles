@@ -1,0 +1,13 @@
+#!/bin/sh
+
+if [ "$#" -gt 1 ]; then
+  printf 'Usage: git cb [name]\n' >&2
+  exit 1
+fi
+
+suffix=$(date +%Y_%m_%d_%H%M) || exit
+name_part=""
+[ -n "$1" ] && name_part="${1}__"
+user=${USER:-$(id -un)}
+
+git checkout -b "$user/${name_part}${suffix}"

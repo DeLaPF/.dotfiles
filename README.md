@@ -43,6 +43,7 @@ When cloned elsewhere, add `-t "$HOME"` to Stow. Remove the links with
 - Device-only configuration belongs in `~/.zshenv.local` or `~/.zshrc.local`.
 - Functions are autoloaded from `~/.config/zsh/functions`; `refr` replaces the
   current shell after configuration changes.
+- Git helpers are native subcommands: `git cb`, `git rs`, `git po`, and `git lg`.
 - Zenv loads the nearest trusted `.envrc`: `zenv status|allow|deny|reload`.
 - Optional `.cmdsrc`/`.linksrc` files use `[group|alias]` headings (`!` hides a
   group) and `label :: command`/`label URL` entries.

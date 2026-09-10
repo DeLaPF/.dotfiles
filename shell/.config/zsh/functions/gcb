@@ -1,6 +1,0 @@
-emulate -L zsh
-
-local suffix name_part
-suffix=$(date +%Y_%m_%d_%H%M)
-name_part="${1:+${1}__}"
-git checkout -b "$USER/${name_part}${suffix}"

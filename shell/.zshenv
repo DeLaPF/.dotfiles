@@ -19,7 +19,7 @@ typeset _zshenv_functions="$HOME/.config/zsh/functions"
 if [[ -d "$_zshenv_functions" ]]; then
   fpath=("$_zshenv_functions" $fpath)
   typeset -a req_universal=(
-    gcb grs gpo pnpm _link
+    pnpm
   )
   autoload -Uz $req_universal
   unset req_universal

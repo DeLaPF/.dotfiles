@@ -1,0 +1,54 @@
+#!/bin/sh
+
+missing=""
+for command_name in rg fzf bat; do
+  command -v "$command_name" >/dev/null 2>&1 || missing="$missing $command_name"
+done
+if [ -n "$missing" ]; then
+  printf 'git lg: missing required commands:%s\n' "$missing" >&2
+  exit 1
+fi
+
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
+  printf 'git lg: not inside a Git worktree\n' >&2
+  exit 1
+}
+
+selected_lines=$(
+  rg --hidden --line-number --no-heading --color=always "$@" |
+    fzf --ansi \
+      --multi \
+      --delimiter : \
+      --preview 'bat --style=numbers --color=always --highlight-line {2} {1}' \
+      --preview-window 'up,60%,border-bottom,+{2}+3/3' \
+      --bind 'enter:accept'
+) || exit
+
+[ -n "$selected_lines" ] || exit
+
+remote_url=$(git config --get remote.origin.url) || exit
+case "$remote_url" in
+  git@*)
+    remote_url=${remote_url#git@}
+    remote_url=$(printf '%s\n' "$remote_url" | sed 's|:|/|')
+    remote_url="https://${remote_url%.git}"
+    ;;
+  *) remote_url=${remote_url%.git} ;;
+esac
+
+hash=$(git rev-parse HEAD) || exit
+repo_prefix=$(git rev-parse --show-prefix) || exit
+
+printf '%s\n' "$selected_lines" | while IFS= read -r item; do
+  file=${item%%:*}
+  remainder=${item#*:}
+  line=${remainder%%:*}
+  permalink="${remote_url}/blob/${hash}/${repo_prefix}${file}#L${line}"
+
+  printf '\033]8;;%s\033\\%s:%s\033]8;;\033\\\n' "$permalink" "$file" "$line"
+  case $(uname -s) in
+    Darwin) open "$permalink" ;;
+    Linux) xdg-open "$permalink" >/dev/null 2>&1 ;;
+    *) printf 'git lg: cannot open URLs on this platform\n' >&2; exit 1 ;;
+  esac
+done

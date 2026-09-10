@@ -1,0 +1,30 @@
+#!/bin/sh
+
+branch=$(git symbolic-ref --quiet --short HEAD) || exit
+remote_url=$(git remote get-url origin) || exit
+
+case "$remote_url" in
+  git@github.com:*) repo=${remote_url#git@github.com:} ;;
+  https://github.com/*) repo=${remote_url#https://github.com/} ;;
+  ssh://git@github.com/*) repo=${remote_url#ssh://git@github.com/} ;;
+  *)
+    printf 'git po: origin is not a GitHub remote: %s\n' "$remote_url" >&2
+    exit 1
+    ;;
+esac
+repo=${repo%.git}
+
+default_branch=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null)
+default_branch=${default_branch#origin/}
+if [ -z "$default_branch" ]; then
+  default_branch=$(git remote show origin | sed -n 's/.*HEAD branch: //p') || exit
+fi
+if [ -z "$default_branch" ]; then
+  printf 'git po: could not determine the default branch\n' >&2
+  exit 1
+fi
+
+git push "$@" -u origin "$branch" || exit
+
+url="https://github.com/$repo/compare/$default_branch...$branch"
+printf '\033]8;;%s\033\\%s\033]8;;\033\\\n' "$url" 'Click to Open PR'

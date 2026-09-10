@@ -15,8 +15,8 @@ typeset _zshrc_completions="$HOME/.config/zsh/completions"
 unset _zshrc_completions
 
 typeset -a req_interactive=(
-  links cmds glg plg refr
-  _core_fzf_engine _core_fzf_completions
+  links cmds plg refr
+  _link _core_fzf_engine _core_fzf_completions
 )
 autoload -Uz $req_interactive
 unset req_interactive

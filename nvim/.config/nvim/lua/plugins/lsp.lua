@@ -1,39 +1,19 @@
 return {
     {
         "pmizio/typescript-tools.nvim",
-        dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
-        ft = { "typescript", "typescriptreact", "javascript", "javascriptreact" },
-        opts = {
-            tsserver_max_memory = 8192,
+        dependencies = {
+            "nvim-lua/plenary.nvim",
+            "neovim/nvim-lspconfig",
+            "saghen/blink.cmp",
         },
-        config = function(_, opts)
-            require("typescript-tools").setup(opts)
-
-            vim.g.ts_auto_restart = true
-
-            vim.api.nvim_create_user_command("TsToggleAutoRestart", function()
-                vim.g.ts_auto_restart = not vim.g.ts_auto_restart
-                vim.notify("TS auto-restart: " .. (vim.g.ts_auto_restart and "on" or "off"))
-            end, {})
-
-            vim.api.nvim_create_autocmd("LspDetach", {
-                group = vim.api.nvim_create_augroup("ts-tools-auto-restart", { clear = true }),
-                callback = function(event)
-                    if not vim.g.ts_auto_restart then
-                        return
-                    end
-                    local client = vim.lsp.get_client_by_id(event.data.client_id)
-                    if client and client.name == "typescript-tools" then
-                        vim.defer_fn(function()
-                            local clients = vim.lsp.get_clients({ bufnr = event.buf, name = "typescript-tools" })
-                            if #clients == 0 and vim.api.nvim_buf_is_valid(event.buf) then
-                                vim.cmd("edit")
-                                vim.notify("typescript-tools crashed, restarting...", vim.log.levels.WARN)
-                            end
-                        end, 1000)
-                    end
-                end,
-            })
+        ft = { "typescript", "typescriptreact", "javascript", "javascriptreact" },
+        opts = function()
+            return {
+                capabilities = require("blink.cmp").get_lsp_capabilities(),
+                settings = {
+                    tsserver_max_memory = 8192,
+                },
+            }
         end,
     },
     {
@@ -147,19 +127,6 @@ return {
                     --  the definition of its *type*, not where it was *defined*.
                     map("grt", require("telescope.builtin").lsp_type_definitions, "[G]oto [T]ype Definition")
 
-                    -- This function resolves a difference between neovim nightly (version 0.11) and stable (version 0.10)
-                    ---@param client vim.lsp.Client
-                    ---@param method vim.lsp.protocol.Method
-                    ---@param bufnr? integer some lsp support methods only in specific files
-                    ---@return boolean
-                    local function client_supports_method(client, method, bufnr)
-                        if vim.fn.has("nvim-0.11") == 1 then
-                            return client:supports_method(method, bufnr)
-                        else
-                            return client.supports_method(method, { bufnr = bufnr })
-                        end
-                    end
-
                     -- The following two autocommands are used to highlight references of the
                     -- word under your cursor when your cursor rests there for a little while.
                     --    See `:help CursorHold` for information about when this is executed
@@ -168,8 +135,7 @@ return {
                     local client = vim.lsp.get_client_by_id(event.data.client_id)
                     if
                         client
-                        and client_supports_method(
-                            client,
+                        and client:supports_method(
                             vim.lsp.protocol.Methods.textDocument_documentHighlight,
                             event.buf
                         )
@@ -203,7 +169,7 @@ return {
                     -- This may be unwanted, since they displace some of your code
                     if
                         client
-                        and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf)
+                        and client:supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf)
                     then
                         map("<leader>th", function()
                             vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = event.buf }))
@@ -315,20 +281,16 @@ return {
             })
             require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
 
-            require("mason-lspconfig").setup({
-                ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
-                automatic_installation = false,
-                handlers = {
-                    function(server_name)
-                        local server = servers[server_name] or {}
-                        -- This handles overriding only values explicitly passed
-                        -- by the server configuration above. Useful when disabling
-                        -- certain features of an LSP (for example, turning off formatting for ts_ls)
-                        server.capabilities = vim.tbl_deep_extend("force", {}, capabilities, server.capabilities or {})
-                        require("lspconfig")[server_name].setup(server)
-                    end,
-                },
-            })
+            -- Mason installs the declared servers; Neovim owns their configuration
+            -- and activation. Disabling Mason's blanket automatic enable prevents
+            -- old, still-installed servers from silently joining the session.
+            require("mason-lspconfig").setup({ automatic_enable = false })
+
+            for server_name, server in pairs(servers) do
+                server.capabilities = vim.tbl_deep_extend("force", {}, capabilities, server.capabilities or {})
+                vim.lsp.config(server_name, server)
+            end
+            vim.lsp.enable(vim.tbl_keys(servers))
         end,
     },
     { -- Autocompletion

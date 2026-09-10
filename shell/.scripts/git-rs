@@ -1,4 +1,9 @@
-emulate -L zsh
+#!/bin/sh
+
+git rev-parse --git-dir >/dev/null 2>&1 || {
+  printf 'git rs: not inside a Git repository\n' >&2
+  exit 1
+}
 
 git reflog show --pretty=format:'%gs ~ %gd' --date=relative |
   grep 'checkout:' |
