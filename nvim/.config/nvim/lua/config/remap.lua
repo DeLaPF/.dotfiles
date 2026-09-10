@@ -1,9 +1,6 @@
 vim.keymap.set("i", "jk", "<Esc>")
 vim.keymap.set("n", "<leader>g", "<C-w>")
 
--- when not using oil
--- vim.keymap.set("n", "-", "<cmd>Ex<CR>")
-
 -- navigation
 vim.keymap.set("n", "<C-d>", "<C-d>zz")
 vim.keymap.set("n", "<C-u>", "<C-u>zz")
