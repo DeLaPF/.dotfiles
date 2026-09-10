@@ -33,8 +33,27 @@ not_found_auto_install = false
 package_manager = "npm"
 
 [tasks."dotfiles:setup"]
-description = "Install dotfile-managed shell and tmux plugins"
-depends = ["dotfiles:zsh-plugins", "dotfiles:tmux-plugins"]
+description = "Finish dotfile setup"
+depends = ["dotfiles:git-config", "dotfiles:zsh-plugins", "dotfiles:tmux-plugins"]
+
+[tasks."dotfiles:git-config"]
+description = "Reserve ~/.gitconfig for machine-specific global settings"
+run = '''
+set -eu
+config="$HOME/.gitconfig"
+
+if [ -e "$config" ]; then
+  if [ ! -f "$config" ]; then
+    echo "Refusing non-file Git config path: $config" >&2
+    exit 1
+  fi
+elif [ -L "$config" ]; then
+  echo "Refusing broken Git config symlink: $config" >&2
+  exit 1
+else
+  touch "$config"
+fi
+'''
 
 [tasks."dotfiles:zsh-plugins"]
 description = "Install zsh-syntax-highlighting"

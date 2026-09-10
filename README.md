@@ -30,6 +30,10 @@ mise run dotfiles:setup
 bob install stable && bob use stable
 ```
 
+`mise install` installs pinned executables. `mise run dotfiles:setup` then runs
+the idempotent Git, Zsh-plugin, and tmux-plugin setup tasks; rerun it after
+changing those pins.
+
 When cloned elsewhere, add `-t "$HOME"` to Stow. Remove the links with
 `stow -D nvim shell`.
 
@@ -44,11 +48,11 @@ When cloned elsewhere, add `-t "$HOME"` to Stow. Remove the links with
 - Functions are autoloaded from `~/.config/zsh/functions`; `refr` replaces the
   current shell after configuration changes.
 - Git helpers are native subcommands: `git cb`, `git rs`, `git po`, and `git lg`.
+  Shared defaults use XDG config; normal `git config --global` writes stay in
+  the machine-specific `~/.gitconfig` reserved by `dotfiles:setup`.
 - Zenv loads the nearest trusted `.envrc`: `zenv status|allow|deny|reload`.
 - Optional `.cmdsrc`/`.linksrc` files use `[group|alias]` headings (`!` hides a
   group) and `label :: command`/`label URL` entries.
-
-`mise run dotfiles:setup` installs the pinned Zsh and tmux plugins.
 
 ## Worktrees
 

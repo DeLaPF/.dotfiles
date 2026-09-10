@@ -9,3 +9,19 @@
     aa = add -A
     ll = log -1
     b = checkout -
+
+[init]
+    defaultBranch = main
+
+[fetch]
+    prune = true
+
+[pull]
+    # Refuse divergent pulls instead of silently choosing merge or rebase.
+    ff = only
+
+[merge]
+    conflictStyle = zdiff3
+
+# If plain `git push` becomes common, push.autoSetupRemote can replace the
+# initial `--set-upstream`; `git po` already manages its upstream explicitly.
