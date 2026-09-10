@@ -3,7 +3,9 @@ emulate -L zsh
 local repo_dir="$1"
 local requested_name="$2"
 local current_branch="$3"
-local date_stamp time_stamp candidate
+local current_worktree="$4"
+local date_stamp time_stamp candidate target_path
+local -i branch_available directory_available
 local -a candidates
 
 date_stamp=$(date +%Y_%m_%d)
@@ -23,12 +25,24 @@ else
 fi
 
 for candidate in $candidates; do
+  target_path="$repo_dir/$candidate"
+  branch_available=0
+  directory_available=0
+
   if [[ "$candidate" == "$current_branch" ]] ||
       ! git -C "$repo_dir/.bare" show-ref --verify --quiet "refs/heads/$candidate"; then
+    branch_available=1
+  fi
+  if [[ -n "$current_worktree" && "${target_path:A}" == "${current_worktree:A}" ]] ||
+      [[ ! -e "$target_path" && ! -L "$target_path" ]]; then
+    directory_available=1
+  fi
+
+  if (( branch_available && directory_available )); then
     printf '%s\n' "$candidate"
     return 0
   fi
 done
 
-printf 'Error: all worktree names for this minute already exist\n' >&2
+printf 'Error: all worktree names for this minute are unavailable\n' >&2
 return 1

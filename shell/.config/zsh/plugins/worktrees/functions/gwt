@@ -1,5 +1,26 @@
 emulate -L zsh
 
+local -a usage_lines=(
+  'Usage: gwt <command>'
+  '  -c [name] [base]   Create new worktree (base defaults to current branch)'
+  '  -e <branch>        Check out existing branch into a new worktree'
+  '  -m <name>          Rename current worktree and branch using the -c naming ladder'
+  '  -r [--force]       Remove current worktree'
+)
+
+case "$1" in
+  ''|help|-h|--help)
+    printf '%s\n' "${usage_lines[@]}"
+    return 0
+    ;;
+  -c|-e|-m|-r) ;;
+  *)
+    printf 'Error: unknown command: %s\n' "$1" >&2
+    printf '%s\n' "${usage_lines[@]}" >&2
+    return 1
+    ;;
+esac
+
 local repo_dir="$PWD"
 while [[ "$repo_dir" != / && ! -d "$repo_dir/.bare" ]]; do
   repo_dir=$(dirname "$repo_dir")
@@ -16,8 +37,16 @@ case "$1" in
   -c)
     local requested_name="$2"
     local worktree_name start_point
+
+    if [[ -n "$3" ]]; then
+      start_point="$3"
+    else
+      start_point=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || {
+        printf 'Error: could not infer a base; run from a worktree or pass: gwt -c [name] <base>\n' >&2
+        return 1
+      }
+    fi
     worktree_name=$(_gwt_branch_name "$repo_dir" "$requested_name") || return
-    start_point="${3:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null)}"
     git -C "$repo_dir/.bare" worktree add "$repo_dir/$worktree_name" -b "$worktree_name" "$start_point" &&
       _gwt_post_create "$repo_dir" "$hook_dir" "$repo_dir/$worktree_name"
     ;;
@@ -28,6 +57,10 @@ case "$1" in
       return 1
     fi
     local worktree_dir="${branch//\//__}"
+    if [[ -e "$repo_dir/$worktree_dir" || -L "$repo_dir/$worktree_dir" ]]; then
+      printf 'Error: worktree path already exists: %s\n' "$repo_dir/$worktree_dir" >&2
+      return 1
+    fi
     git -C "$repo_dir/.bare" worktree add "$repo_dir/$worktree_dir" "$branch" &&
       _gwt_post_create "$repo_dir" "$hook_dir" "$repo_dir/$worktree_dir"
     ;;
@@ -38,7 +71,9 @@ case "$1" in
       printf 'Error: not inside a worktree\n' >&2
       return 1
     }
-    [[ -x "$hook_dir/on-remove" ]] && "$hook_dir/on-remove" "$worktree_path"
+    if [[ -x "$hook_dir/on-remove" ]]; then
+      "$hook_dir/on-remove" "$worktree_path" || return
+    fi
     cd "$repo_dir" && git -C "$repo_dir/.bare" worktree remove "$@" "$worktree_path"
     ;;
   -m)
@@ -53,7 +88,7 @@ case "$1" in
       return 1
     }
     current_branch=$(git -C "$worktree_path" branch --show-current) || return
-    worktree_name=$(_gwt_branch_name "$repo_dir" "$new_name" "$current_branch") || return
+    worktree_name=$(_gwt_branch_name "$repo_dir" "$new_name" "$current_branch" "$worktree_path") || return
     target_path="$repo_dir/$worktree_name"
 
     if [[ "$current_branch" != "$worktree_name" ]]; then
@@ -63,13 +98,5 @@ case "$1" in
       git -C "$repo_dir/.bare" worktree move "$worktree_path" "$target_path" || return
     fi
     cd "$target_path"
-    ;;
-  *)
-    printf '%s\n' \
-      'Usage: gwt <command>' \
-      '  -c [name] [base]   Create new worktree (base defaults to current branch)' \
-      '  -e <branch>        Check out existing branch into a new worktree' \
-      '  -m <name>          Rename current worktree and branch using the -c naming ladder' \
-      '  -r [--force]       Remove current worktree'
     ;;
 esac
