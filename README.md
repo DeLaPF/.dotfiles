@@ -27,7 +27,7 @@ exec zsh
 
 mise install
 mise run dotfiles:setup
-bob install stable && bob use stable
+bob use stable
 ```
 
 `mise install` installs pinned executables. `mise run dotfiles:setup` then runs
@@ -67,18 +67,20 @@ source "$HOME/.config/zsh/plugins/worktrees/worktrees.plugin.zsh"
 
 `bare-clone URL` creates `repo/.bare` plus an initial worktree for the default
 branch. From any worktree, `gwt -c [name] [base]` creates a sibling branch and
-worktree. A named worktree starts as `USER__name`, adding `__YYYY_MM_DD` and
-then `__HH_MM` only on collisions. Without a name, it starts as
-`USER__YYYY_MM_DD` and adds the time on collision. `gwt -m name` renames the
-current branch and worktree using the same ladder. Optional `.ctx/` contents
-are copied into new worktrees; executable `.worktree-hooks/on-create` and
-`on-remove` scripts run around creation and removal.
+worktree. Names use a lowercase, underscore-normalized login from the
+authenticated GitHub CLI: a named worktree starts as `github_login__name`,
+adding `__YYYY_MM_DD` and then `__HH_MM` only on collisions. Without a name, it starts as
+`github_login__YYYY_MM_DD` and adds the time on collision. `gwt -m name`
+renames the current branch and worktree using the same ladder. Optional
+`.ctx/` contents are copied into new worktrees; executable
+`.worktree-hooks/on-create` and `on-remove` scripts run around creation and
+removal.
 
 ## Tool ownership
 
 | Owner | Tools |
 | --- | --- |
-| Mise | Node, Python, uv, pnpm, Starship, Typst, ripgrep, fzf, Bat, GitHub CLI, Bob |
+| Mise | Node, Python, uv, pnpm, Starship, Typst, ripgrep, fzf, Bat, GitHub CLI, Bob, Tree-sitter CLI |
 | Bob | Neovim stable/nightly, exact versions, commits, and source builds |
 | Mason | Neovim LSPs and editor-only tools |
 | [rustup](https://www.rust-lang.org/tools/install) | Rust and Cargo |
@@ -113,10 +115,10 @@ uv lock --script file.py  # optional
 
 ## Neovim and Typst
 
-Bob installs Neovim 0.11.4 or newer; `lazy-lock.json` pins its plugins. Source
+Bob installs Neovim 0.12 or newer; `lazy-lock.json` pins its plugins. Source
 builds need the platform's
 [Neovim prerequisites](https://github.com/neovim/neovim/blob/master/BUILD.md),
-then `bob install COMMIT && bob use COMMIT`. Set `enable_release_build = true`
+then `bob use COMMIT`. Set `enable_release_build = true`
 in Bob's config for an optimized build.
 
 Mise installs Typst and Mason installs Tinymist. In Typst buffers, `\p` toggles
@@ -133,4 +135,4 @@ preview, `\e` exports, `\o` opens the PDF, and `\f` formats. Local packages are:
 - Bump Mise tool versions or plugin refs, then run `mise install` and
   `mise run dotfiles:setup`.
 - Update Neovim plugins with `:Lazy update` and commit `lazy-lock.json`.
-- Move Neovim with `bob install VERSION && bob use VERSION`.
+- Move Neovim with `bob use VERSION`.

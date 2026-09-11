@@ -8,6 +8,14 @@ fi
 suffix=$(date +%Y_%m_%d_%H%M) || exit
 name_part=""
 [ -n "$1" ] && name_part="${1}__"
-user=${USER:-$(id -un)}
+if ! command -v gh >/dev/null 2>&1; then
+  printf 'git cb: GitHub CLI (gh) is required to determine the branch prefix\n' >&2
+  exit 1
+fi
+user=$(gh api user --jq .login) || {
+  printf 'git cb: could not determine the authenticated GitHub login\n' >&2
+  exit 1
+}
+user=$(printf '%s\n' "$user" | tr '[:upper:] ' '[:lower:]_') || exit
 
 git checkout -b "$user/${name_part}${suffix}"

@@ -4,23 +4,33 @@ local repo_dir="$1"
 local requested_name="$2"
 local current_branch="$3"
 local current_worktree="$4"
-local date_stamp time_stamp candidate target_path
+local github_user date_stamp time_stamp candidate target_path
 local -i branch_available directory_available
 local -a candidates
+
+if (( ! $+commands[gh] )); then
+  printf 'Error: gwt requires GitHub CLI (gh) to determine the branch prefix\n' >&2
+  return 1
+fi
+github_user=$(gh api user --jq .login) || {
+  printf 'Error: gwt could not determine the authenticated GitHub login\n' >&2
+  return 1
+}
+github_user=${${github_user:l}// /_}
 
 date_stamp=$(date +%Y_%m_%d)
 time_stamp=$(date +%H_%M)
 
 if [[ -n "$requested_name" ]]; then
   candidates=(
-    "${USER}__${requested_name}"
-    "${USER}__${requested_name}__${date_stamp}"
-    "${USER}__${requested_name}__${date_stamp}__${time_stamp}"
+    "${github_user}__${requested_name}"
+    "${github_user}__${requested_name}__${date_stamp}"
+    "${github_user}__${requested_name}__${date_stamp}__${time_stamp}"
   )
 else
   candidates=(
-    "${USER}__${date_stamp}"
-    "${USER}__${date_stamp}__${time_stamp}"
+    "${github_user}__${date_stamp}"
+    "${github_user}__${date_stamp}__${time_stamp}"
   )
 fi
 

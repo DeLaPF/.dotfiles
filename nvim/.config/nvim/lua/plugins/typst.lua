@@ -9,5 +9,10 @@ return {
   "chomosuke/typst-preview.nvim",
   ft = "typst",
   version = "1.*",
-  opts = {},
+  opts = {
+    dependencies_bin = {
+      -- Reuse the Tinymist managed by Mason instead of downloading another copy.
+      tinymist = "tinymist",
+    },
+  },
 }
