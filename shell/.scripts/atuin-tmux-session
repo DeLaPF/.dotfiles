@@ -1,0 +1,42 @@
+#!/bin/sh
+
+set -eu
+
+restore_file_var=ATUIN_TMUX_RESURRECT_FILE
+
+resurrect_dir() {
+  dir=$(tmux show-options -gqv @resurrect-dir)
+  if [ -z "$dir" ]; then
+    if [ -d "$HOME/.tmux/resurrect" ]; then
+      dir="$HOME/.tmux/resurrect"
+    else
+      dir="${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect"
+    fi
+  fi
+
+  printf '%s\n' "$dir" | sed "s|^~|$HOME|; s|\$HOME|$HOME|g"
+}
+
+case ${1:-} in
+  save)
+    state_file=${2:?missing tmux-resurrect state file}
+    tab=$(printf '\t')
+    tmux list-panes -a -F "atuin${tab}#{session_name}${tab}#{window_index}${tab}#{pane_index}${tab}#{@atuin-session}" |
+      awk -F '\t' '$5 != ""' >> "$state_file"
+    ;;
+  restore-start)
+    state_file="$(resurrect_dir)/last"
+    if [ -r "$state_file" ]; then
+      tmux set-environment -g "$restore_file_var" "$state_file"
+    else
+      tmux set-environment -gu "$restore_file_var"
+    fi
+    ;;
+  restore-finish)
+    tmux set-environment -gu "$restore_file_var"
+    ;;
+  *)
+    echo "usage: atuin-tmux-session save STATE_FILE|restore-start|restore-finish" >&2
+    exit 2
+    ;;
+esac

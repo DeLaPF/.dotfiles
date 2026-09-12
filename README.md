@@ -43,7 +43,9 @@ When cloned elsewhere, add `-t "$HOME"` to Stow. Remove the links with
   terminals, scripts, editors, and agents.
 - `.zprofile` restores Mise precedence after macOS login-shell `path_helper`.
 - `.zshrc` adds interactive aliases, completion, keybindings, Starship, and
-  syntax highlighting.
+  syntax highlighting. Atuin keeps history local: normal-mode `/` searches the
+  current tmux pane, while normal-mode `?` searches globally; tmux-resurrect
+  preserves pane history identities.
 - Device-only configuration belongs in `~/.zshenv.local` or `~/.zshrc.local`.
 - Functions are autoloaded from `~/.config/zsh/functions`; `refr` replaces the
   current shell after configuration changes.
@@ -80,7 +82,7 @@ removal.
 
 | Owner | Tools |
 | --- | --- |
-| Mise | Node, Python, uv, pnpm, Starship, Typst, ripgrep, fzf, Bat, GitHub CLI, Bob, Tree-sitter CLI |
+| Mise | Node, Python, uv, pnpm, Starship, Typst, ripgrep, fzf, Bat, GitHub CLI, Bob, Tree-sitter CLI, Atuin |
 | Bob | Neovim stable/nightly, exact versions, commits, and source builds |
 | Mason | Neovim LSPs and editor-only tools |
 | [rustup](https://www.rust-lang.org/tools/install) | Rust and Cargo |
