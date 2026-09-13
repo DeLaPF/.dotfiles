@@ -25,6 +25,7 @@ tpm_ref = "99469c4a9b1ccf77fade25842dc7bafbc8ce9946"
 tmux_prefix_highlight_ref = "06cbb4ecd3a0a918ce355c70dc56d79debd455c7"
 tmux_resurrect_ref = "cff343cf9e81983d3da0c8562b01616f12e8d548"
 tmux_continuum_ref = "0698e8f4b17d6454c71bf5212895ec055c578da0"
+tmux_fzf_url_ref = "7c4838e95fde660b7f2aaf514323ac8498e0d4f4"
 
 [settings]
 # Installation should be deliberate, especially in agent and CI shells.
@@ -108,4 +109,7 @@ pin_repo "$destination" "{{ vars.tpm_ref }}"
 pin_repo "$HOME/.tmux/plugins/tmux-prefix-highlight" "{{ vars.tmux_prefix_highlight_ref }}"
 pin_repo "$HOME/.tmux/plugins/tmux-resurrect" "{{ vars.tmux_resurrect_ref }}"
 pin_repo "$HOME/.tmux/plugins/tmux-continuum" "{{ vars.tmux_continuum_ref }}"
+pin_repo "$HOME/.tmux/plugins/tmux-fzf-url" "{{ vars.tmux_fzf_url_ref }}"
+__FZF_URL_TESTING=1 bash -c '. "$1"; ensure_xre' _ \
+  "$HOME/.tmux/plugins/tmux-fzf-url/fzf-url.sh"
 '''

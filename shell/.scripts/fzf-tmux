@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# Run fzf inside a minimal Neovim terminal for real Vim modes.
+set -eu
+
+work_dir=$(mktemp -d "${TMPDIR:-/tmp}/fzf-tmux.XXXXXX")
+input="$work_dir/input"
+output="$work_dir/output"
+args="$work_dir/args"
+socket="$work_dir/fzf.sock"
+
+cleanup() {
+  rm -f "$input" "$output" "$args" "$socket"
+  rmdir "$work_dir" 2>/dev/null || true
+}
+trap cleanup EXIT HUP INT TERM
+
+cat >"$input"
+printf '%s\0' "$@" >"$args"
+: >"$output"
+
+tmux display-popup -E -w 100% -h 50% \
+  -e "FZF_MODAL_INPUT=$input" \
+  -e "FZF_MODAL_OUTPUT=$output" \
+  -e "FZF_MODAL_ARGS=$args" \
+  -e "FZF_MODAL_SOCKET=$socket" \
+  nvim --clean -u "$HOME/.config/fzf-modal/init.lua"
+
+[ ! -s "$output" ] || cat "$output"
