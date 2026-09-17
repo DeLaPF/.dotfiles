@@ -2,7 +2,8 @@ emulate -L zsh
 
 local -a usage_lines=(
   'Usage: gwt <command>'
-  '  -c [name] [base]   Create new worktree (base defaults to current branch)'
+  '  -c [name] [-b|--base <branch>]'
+  '                     Create new worktree (base defaults to current branch)'
   '  -e <branch>        Check out existing branch into a new worktree'
   '  -m <name>          Rename current worktree and branch using the -c naming ladder'
   '  -r [--force]       Remove current worktree'
@@ -35,14 +36,54 @@ local hook_dir="$repo_dir/.worktree-hooks"
 
 case "$1" in
   -c)
-    local requested_name="$2"
+    shift
+    local requested_name=""
     local worktree_name start_point
+    local -i name_set=0
 
-    if [[ -n "$3" ]]; then
-      start_point="$3"
-    else
+    while (( $# > 0 )); do
+      case "$1" in
+        -b|--base)
+          if (( $# < 2 )) || [[ -z "$2" ]]; then
+            printf 'Error: %s requires a base branch\n' "$1" >&2
+            return 1
+          fi
+          start_point="$2"
+          shift 2
+          ;;
+        --base=*)
+          start_point="${1#--base=}"
+          if [[ -z "$start_point" ]]; then
+            printf 'Error: --base requires a base branch\n' >&2
+            return 1
+          fi
+          shift
+          ;;
+        -h|--help)
+          printf '%s\n' "${usage_lines[@]}"
+          return 0
+          ;;
+        -*)
+          printf 'Error: unknown option: %s\n' "$1" >&2
+          printf '%s\n' "${usage_lines[@]}" >&2
+          return 1
+          ;;
+        *)
+          if (( name_set )); then
+            printf 'Error: only one name is allowed; use --base for the base branch\n' >&2
+            printf '%s\n' "${usage_lines[@]}" >&2
+            return 1
+          fi
+          requested_name="$1"
+          name_set=1
+          shift
+          ;;
+      esac
+    done
+
+    if [[ -z "$start_point" ]]; then
       start_point=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || {
-        printf 'Error: could not infer a base; run from a worktree or pass: gwt -c [name] <base>\n' >&2
+        printf 'Error: could not infer a base; run from a worktree or pass --base <branch>\n' >&2
         return 1
       }
     fi
@@ -61,8 +102,36 @@ case "$1" in
       printf 'Error: worktree path already exists: %s\n' "$repo_dir/$worktree_dir" >&2
       return 1
     fi
-    git -C "$repo_dir/.bare" worktree add "$repo_dir/$worktree_dir" "$branch" &&
-      _gwt_post_create "$repo_dir" "$hook_dir" "$repo_dir/$worktree_dir"
+    git check-ref-format "refs/heads/$branch" || return
+    local remote merge_ref upstream
+    remote=$(git -C "$repo_dir/.bare" config --get "branch.$branch.remote")
+    merge_ref=$(git -C "$repo_dir/.bare" config --get "branch.$branch.merge")
+    # Existing custom upstreams take precedence over origin/<branch>.
+    if [[ -n "$remote" ]]; then
+      if [[ "$remote" != . ]]; then
+        git -C "$repo_dir/.bare" fetch -- "$remote" || return
+      fi
+    else
+      git -C "$repo_dir/.bare" fetch origin || return
+    fi
+    if [[ -z "$remote" && -z "$merge_ref" ]] &&
+       git -C "$repo_dir/.bare" show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+      if git -C "$repo_dir/.bare" show-ref --verify --quiet "refs/heads/$branch"; then
+        git -C "$repo_dir/.bare" branch --set-upstream-to="origin/$branch" -- "$branch" || return
+      else
+        git -C "$repo_dir/.bare" branch --track -- "$branch" "origin/$branch" || return
+      fi
+    fi
+    git -C "$repo_dir/.bare" worktree add "$repo_dir/$worktree_dir" "$branch" || return
+    upstream=$(git -C "$repo_dir/$worktree_dir" rev-parse --verify --quiet '@{upstream}')
+    if [[ -n "$upstream" ]]; then
+      if git -C "$repo_dir/$worktree_dir" merge-base --is-ancestor HEAD "$upstream"; then
+        git -C "$repo_dir/$worktree_dir" merge --ff-only "$upstream" || return
+      elif ! git -C "$repo_dir/$worktree_dir" merge-base --is-ancestor "$upstream" HEAD; then
+        printf 'Branch %s has diverged from its upstream; kept local commits unchanged.\n' "$branch" >&2
+      fi
+    fi
+    _gwt_post_create "$repo_dir" "$hook_dir" "$repo_dir/$worktree_dir"
     ;;
   -r)
     shift

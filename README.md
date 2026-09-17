@@ -49,8 +49,8 @@ Remove the links with
   terminals, scripts, editors, and agents.
 - `.zprofile` restores Mise precedence after macOS login-shell `path_helper`.
 - `.zshrc` adds interactive aliases, completion, keybindings, Starship, and
-  syntax highlighting. Atuin keeps history local: normal-mode `/` searches the
-  current tmux pane, while normal-mode `?` searches globally; tmux-resurrect
+  syntax highlighting. Atuin opens ready to search: normal-mode `/` searches
+  the current tmux pane, while normal-mode `?` searches globally; tmux-resurrect
   preserves pane history identities.
 - Device-only configuration belongs in `~/.zshenv.local` or `~/.zshrc.local`.
 - Functions are autoloaded from `~/.config/zsh/functions`; `refr` replaces the
@@ -89,8 +89,8 @@ source "$HOME/.config/zsh/plugins/worktrees/worktrees.plugin.zsh"
 ```
 
 `bare-clone URL` creates `repo/.bare` plus an initial worktree for the default
-branch. From any worktree, `gwt -c [name] [base]` creates a sibling branch and
-worktree. Names use a lowercase, underscore-normalized login from the
+branch. From any worktree, `gwt -c [name] [--base branch]` creates a sibling
+branch and worktree. Names use a lowercase, underscore-normalized login from the
 authenticated GitHub CLI: a named worktree starts as `github_login__name`,
 adding `__YYYY_MM_DD` and then `__HH_MM` only on collisions. Without a name, it starts as
 `github_login__YYYY_MM_DD` and adds the time on collision. `gwt -m name`

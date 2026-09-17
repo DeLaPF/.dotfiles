@@ -9,6 +9,7 @@ fi
 local name branch
 name=$(basename "$url" .git)
 mkdir "$name" && git clone --bare "$url" "$name/.bare" || return
-git -C "$name/.bare" config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' || return
+local helper="${${functions_source[bare-clone]}:A:h:h}/prepare-bare.py"
+python3 "$helper" "$name/.bare" --new-clone || return
 branch=$(git -C "$name/.bare" symbolic-ref HEAD | sed 's|refs/heads/||') || return
 git -C "$name/.bare" worktree add "../$branch" "$branch"

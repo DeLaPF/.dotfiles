@@ -1,1 +1,4 @@
 *.pdf
+
+# Local mise fragments; use ! rules below to track specific files.
+/shell/.config/mise/conf.d/*

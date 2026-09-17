@@ -1,13 +1,55 @@
 #!/bin/sh
 
-if [ "$#" -gt 1 ]; then
-  printf 'Usage: git cb [name]\n' >&2
-  exit 1
-fi
+usage() {
+  printf 'Usage: git cb [name] [-b|--base <branch>]\n'
+}
+
+base=HEAD
+name=""
+name_set=false
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -b|--base)
+      if [ "$#" -lt 2 ] || [ -z "$2" ]; then
+        printf 'git cb: %s requires a base branch\n' "$1" >&2
+        exit 1
+      fi
+      base=$2
+      shift 2
+      ;;
+    --base=*)
+      base=${1#--base=}
+      if [ -z "$base" ]; then
+        printf 'git cb: --base requires a base branch\n' >&2
+        exit 1
+      fi
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    -*)
+      printf 'git cb: unknown option: %s\n' "$1" >&2
+      usage >&2
+      exit 1
+      ;;
+    *)
+      if [ "$name_set" = true ]; then
+        printf 'git cb: only one name is allowed; use --base for the base branch\n' >&2
+        usage >&2
+        exit 1
+      fi
+      name=$1
+      name_set=true
+      shift
+      ;;
+  esac
+done
 
 suffix=$(date +%Y_%m_%d_%H%M) || exit
 name_part=""
-[ -n "$1" ] && name_part="${1}__"
+[ -n "$name" ] && name_part="${name}__"
 if ! command -v gh >/dev/null 2>&1; then
   printf 'git cb: GitHub CLI (gh) is required to determine the branch prefix\n' >&2
   exit 1
@@ -18,4 +60,4 @@ user=$(gh api user --jq .login) || {
 }
 user=$(printf '%s\n' "$user" | tr '[:upper:] ' '[:lower:]_') || exit
 
-git checkout -b "$user/${name_part}${suffix}"
+git checkout --no-track -b "$user/${name_part}${suffix}" "$base" --
