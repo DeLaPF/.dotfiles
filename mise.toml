@@ -1,0 +1,81 @@
+[tools]
+uv = "0.12.6"
+
+[tasks.setup]
+description = "Install dotfiles, tools, and plugins"
+usage = '''
+arg "[packages]" var=#true help="Packages to install (defaults to all)" {
+  choices "nvim" "shell" "agents"
+}
+flag "-t --target <dir>" help="Target directory passed to Stow"
+'''
+run = '''
+set -eu
+repo=$PWD
+if [ -n "${usage_packages:-}" ]; then
+  eval "set -- $usage_packages"
+else
+  set -- nvim shell agents
+fi
+
+if [ -n "${usage_target:-}" ]; then
+  target=$(cd "$usage_target" && pwd -P)
+else
+  target=$(cd "$repo/.." && pwd -P)
+fi
+
+migrate_tree() (
+  source_dir=$1
+  target_dir=$2
+  relative=$3
+  mkdir -p "$target_dir"
+  for source_path in "$source_dir"/.[!.]* "$source_dir"/..?* "$source_dir"/*; do
+    if [ ! -e "$source_path" ] && [ ! -L "$source_path" ]; then
+      continue
+    fi
+    name=${source_path##*/}
+    child_relative=$relative/$name
+    if [ -n "$(git -C "$repo" ls-files -- "$child_relative")" ]; then
+      if [ -d "$source_path" ] && [ ! -L "$source_path" ]; then
+        migrate_tree "$source_path" "$target_dir/$name" "$child_relative"
+      fi
+    else
+      if [ -e "$target_dir/$name" ] || [ -L "$target_dir/$name" ]; then
+        echo "Refusing to overwrite runtime path: $target_dir/$name" >&2
+        exit 1
+      fi
+      mv "$source_path" "$target_dir/$name"
+    fi
+  done
+)
+
+for package do
+  for source_dir in "$repo/$package"/.[!.]* "$repo/$package"/..?* "$repo/$package"/*; do
+    if [ ! -d "$source_dir" ] || [ -L "$source_dir" ]; then
+      continue
+    fi
+    target_dir=$target/${source_dir##*/}
+    marker=$target_dir/.dotfiles-unfolding-$package
+    if [ -L "$target_dir" ] &&
+       [ "$(cd "$target_dir" && pwd -P)" = "$(cd "$source_dir" && pwd -P)" ]; then
+      unlink "$target_dir"
+      mkdir -p "$target_dir"
+      touch "$marker"
+    fi
+    if [ -d "$target_dir" ] && [ ! -L "$target_dir" ] && [ -f "$marker" ]; then
+      migrate_tree "$source_dir" "$target_dir" "$package/${source_dir##*/}"
+      unlink "$marker"
+    fi
+  done
+done
+
+stow --no-folding --target "$target" "$@"
+
+for package do
+  if [ "$package" = shell ]; then
+    mise install
+    mise run dotfiles:setup
+    break
+  fi
+done
+'''

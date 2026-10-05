@@ -12,7 +12,8 @@ brew install stow tmux mise
 # Debian/Ubuntu
 sudo apt update
 sudo apt install -y git stow zsh tmux
-# Install Mise from https://mise.jdx.dev/installing-mise.html
+curl https://mise.run | sh
+export PATH="$HOME/.local/bin:$PATH"
 ```
 
 Tmux 3.4 or newer is required.
@@ -20,22 +21,27 @@ Tmux 3.4 or newer is required.
 ```sh
 git clone git@github.com:DeLaPF/.dotfiles.git ~/.dotfiles
 cd ~/.dotfiles
-stow nvim shell
+mise trust
+mise run setup
 
 chsh -s "$(command -v zsh)"
 exec zsh
 
-mise install
-mise run dotfiles:setup
 bob use stable
 ```
 
-`mise install` installs pinned executables. `mise run dotfiles:setup` then runs
-the idempotent Git, Zsh-plugin, and tmux-plugin setup tasks; rerun it after
-changing those pins.
+`mise run setup` stows every package with `--no-folding`, installs pinned
+executables, and runs the idempotent Git, Zsh-plugin, and tmux-plugin setup
+tasks. No-folding keeps shared directories such as `~/.config` and `~/.local`
+real, allowing packages to overlap without capturing runtime files in this
+repository. Pass package names to select a subset, such as
+`mise run setup shell agents`; shell-owned tools and plugins are configured
+only when `shell` is selected. Use `--target "$HOME"` when the repository is
+cloned somewhere other than `~/.dotfiles`. Rerun setup after changing package
+or tool pins.
 
-When cloned elsewhere, add `-t "$HOME"` to Stow. Remove the links with
-`stow -D nvim shell`.
+Remove the links with
+`stow -D nvim shell agents`.
 
 ## Shell
 
@@ -55,6 +61,21 @@ When cloned elsewhere, add `-t "$HOME"` to Stow. Remove the links with
 - Zenv loads the nearest trusted `.envrc`: `zenv status|allow|deny|reload`.
 - Optional `.cmdsrc`/`.linksrc` files use `[group|alias]` headings (`!` hides a
   group) and `label :: command`/`label URL` entries.
+
+## Agent messaging
+
+`agent-msg peers` lists reachable Claude sessions and recent Codex threads.
+Send with `agent-msg send claude:TARGET MESSAGE` or
+`agent-msg send codex:TARGET MESSAGE`; each message includes a return command.
+An active Codex turn is steered immediately; an idle or non-steerable thread is
+queued for its next turn.
+Claude messages use its peer socket, which preserves the peer-message trust
+boundary. Because peer turns may not render in Remote Control, each Claude
+message asks it to run a target-bound `agent-msg ack` command first. The tool
+output shows the complete envelope exactly as sent, including the generated
+reply and acknowledgement instructions, without Claude regenerating anything.
+Receipts are private runtime files, deleted after a successful acknowledgement,
+and expire after one day if never acknowledged.
 
 ## Worktrees
 

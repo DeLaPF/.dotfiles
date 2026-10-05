@@ -1,0 +1,441 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["websocket-client==1.9.0"]
+# ///
+import argparse
+import json
+import os
+from pathlib import Path
+import socket
+import subprocess
+import tempfile
+import time
+import uuid
+
+import websocket
+
+
+# Message core
+
+def fail(message):
+    raise SystemExit(f"agent-msg: {message}")
+
+
+def unique(items, target, keys):
+    matches = [
+        item for item in items
+        if any(str(item.get(key, "")) == target for key in keys)
+    ]
+    if not matches and len(target) >= 8:
+        matches = [
+            item for item in items
+            if any(str(item.get(key, "")).startswith(target) for key in keys)
+        ]
+    if len(matches) != 1:
+        fail(f"target {target!r} matched {len(matches)} sessions")
+    return matches[0]
+
+
+def receipt_root():
+    runtime = os.environ.get("XDG_RUNTIME_DIR")
+    root = (
+        Path(runtime) / "agent-msg"
+        if runtime
+        else Path(tempfile.gettempdir()) / f"agent-msg-{os.getuid()}"
+    )
+    root.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if root.is_symlink() or root.stat().st_uid != os.getuid() or root.stat().st_mode & 0o077:
+        fail(f"unsafe receipt directory {root}")
+
+    now = time.time()
+    for path in root.glob("*.json"):
+        try:
+            if now - path.stat().st_mtime > 86400:
+                path.unlink()
+        except OSError:
+            pass
+    return root
+
+
+def adapter_identities():
+    return {
+        identity
+        for adapter in ADAPTERS.values()
+        if (identity := adapter.identity())
+    }
+
+
+def current_identity():
+    return next(
+        (
+            identity
+            for adapter in ADAPTERS.values()
+            if (identity := adapter.identity())
+        ),
+        "shell",
+    )
+
+
+def reply_transform(message):
+    origin = current_identity()
+    if origin == "shell":
+        message["headers"].append("[agent-msg from shell]")
+    else:
+        message["headers"].append(
+            f"[agent-msg; reply with: agent-msg send {origin} MESSAGE]"
+        )
+
+
+def receipt_transform(message):
+    message["receipt"] = str(uuid.uuid4())
+    message["headers"].append(
+        "[For user visibility, first run the installed one-time display command: "
+        f"agent-msg ack {message['receipt']}. "
+        "It prints and deletes this target-bound receipt.]"
+    )
+
+
+def prepare_message(text, target, transforms):
+    message = {"headers": [], "receipt": None}
+    for transform in transforms:
+        transform(message)
+
+    content = "\n".join((*message["headers"], text))
+    if receipt := message["receipt"]:
+        path = receipt_root() / f"{receipt}.json"
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "w") as stream:
+            json.dump({"target": target, "content": content}, stream)
+    return content, message["receipt"]
+
+
+def acknowledge(message_id):
+    try:
+        message_id = str(uuid.UUID(message_id))
+        path = receipt_root() / f"{message_id}.json"
+        item = json.loads(path.read_text())
+    except (ValueError, OSError, json.JSONDecodeError):
+        fail(f"unknown receipt {message_id!r}")
+
+    targets = adapter_identities()
+    target = item.get("target")
+    if target not in targets and f"claude:{target}" not in targets:
+        fail("receipt must be acknowledged by its target session")
+
+    path.unlink()
+    print(f"ACK agent-msg {message_id}\n\n{item['content']}")
+
+
+# Claude adapter
+
+class ClaudeAdapter:
+    name = "claude"
+    transforms = (reply_transform, receipt_transform)
+
+    @staticmethod
+    def sessions():
+        root = (
+            Path(os.environ.get("CLAUDE_CONFIG_DIR", Path.home() / ".claude"))
+            / "sessions"
+        )
+        sessions = []
+        for path in root.glob("*.json"):
+            try:
+                session = json.loads(path.read_text())
+                socket_path = session.get("messagingSocketPath")
+                if socket_path and Path(socket_path).is_socket():
+                    sessions.append(session)
+            except (OSError, ValueError):
+                pass
+        return sessions
+
+    def identity(self):
+        socket_path = os.environ.get("CLAUDE_CODE_MESSAGING_SOCKET")
+        session = next(
+            (
+                session
+                for session in self.sessions()
+                if session.get("messagingSocketPath") == socket_path
+            ),
+            None,
+        )
+        return f"claude:{session['sessionId']}" if session else None
+
+    def resolve(self, target):
+        session = unique(self.sessions(), target, ("name", "sessionId", "pid"))
+        if session.get("peerProtocol") != 1:
+            fail(f"unsupported Claude peer protocol {session.get('peerProtocol')!r}")
+        return f"claude:{session['sessionId']}", session
+
+    @staticmethod
+    def deliver(session, content):
+        frame = {
+            "msgV": 1,
+            "msg_id": str(uuid.uuid4()),
+            "type": "user",
+            "message": {"role": "user", "content": content},
+            "priority": "next",
+            "session_id": session["sessionId"],
+        }
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.settimeout(5)
+            client.connect(session["messagingSocketPath"])
+            client.sendall(json.dumps(frame).encode() + b"\n")
+            client.shutdown(socket.SHUT_WR)
+        return f"sent to claude:{session['name']} ({session['sessionId']})"
+
+    def peers(self):
+        return [
+            (
+                f"claude:{session.get('name')}\t{session.get('status')}\t"
+                f"{session.get('sessionId')}\t{session.get('cwd')}"
+            )
+            for session in self.sessions()
+        ]
+
+
+# Codex transport and adapter
+
+class RpcError(Exception):
+    pass
+
+
+class CodexClient:
+    def __init__(self):
+        home = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex"))
+        raw_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        raw_socket.settimeout(5)
+        try:
+            raw_socket.connect(
+                str(home / "app-server-control" / "app-server-control.sock")
+            )
+            self.socket = websocket.create_connection(
+                "ws://localhost/",
+                socket=raw_socket,
+                timeout=5,
+            )
+            self.request_id = 0
+            self.call(
+                "initialize",
+                {
+                    "clientInfo": {
+                        "name": "agent_msg",
+                        "title": "agent-msg",
+                        "version": "0.1.0",
+                    },
+                    "capabilities": {},
+                },
+            )
+            self.socket.send(
+                json.dumps({"method": "initialized", "params": {}})
+            )
+        except BaseException:
+            raw_socket.close()
+            raise
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.socket.close()
+
+    def call(self, method, params):
+        self.request_id += 1
+        self.socket.send(
+            json.dumps(
+                {
+                    "id": self.request_id,
+                    "method": method,
+                    "params": params,
+                }
+            )
+        )
+        while True:
+            message = json.loads(self.socket.recv())
+            if message.get("id") != self.request_id:
+                continue
+            if error := message.get("error"):
+                raise RpcError(error.get("message", str(error)))
+            return message["result"]
+
+
+CODEX_ERRORS = (
+    OSError,
+    TimeoutError,
+    KeyError,
+    ValueError,
+    RpcError,
+    websocket.WebSocketException,
+)
+
+
+class CodexAdapter:
+    name = "codex"
+    transforms = (reply_transform,)
+
+    @staticmethod
+    def identity():
+        thread = (
+            os.environ.get("CODEX_THREAD_ID")
+            or os.environ.get("CODEX_SESSION_ID")
+        )
+        return f"codex:{thread}" if thread else None
+
+    @staticmethod
+    def threads(limit=25):
+        with CodexClient() as client:
+            result = client.call(
+                "thread/list",
+                {"limit": limit, "sortKey": "recency_at"},
+            )
+        return result["data"]
+
+    def resolve(self, target):
+        try:
+            thread = unique(
+                self.threads(100),
+                target,
+                ("id", "name"),
+            )["id"]
+        except CODEX_ERRORS:
+            fail("Codex control daemon is unavailable")
+        return f"codex:{thread}", thread
+
+    @staticmethod
+    def deliver(thread, content):
+        steer_attempted = False
+        try:
+            with CodexClient() as client:
+                state = client.call(
+                    "thread/read",
+                    {"threadId": thread, "includeTurns": False},
+                )["thread"]
+                can_steer = (
+                    state.get("status", {}).get("type") == "active"
+                    and state.get("canAcceptDirectInput")
+                )
+                if can_steer:
+                    turns = client.call(
+                        "thread/turns/list",
+                        {
+                            "threadId": thread,
+                            "limit": 1,
+                            "sortDirection": "desc",
+                        },
+                    )["data"]
+                    if turns and turns[0].get("status") == "inProgress":
+                        steer_attempted = True
+                        try:
+                            client.call(
+                                "turn/steer",
+                                {
+                                    "threadId": thread,
+                                    "expectedTurnId": turns[0]["id"],
+                                    "input": [
+                                        {"type": "text", "text": content}
+                                    ],
+                                },
+                            )
+                        except RpcError:
+                            steer_attempted = False
+                        else:
+                            return f"steered codex:{thread}"
+        except CODEX_ERRORS:
+            if steer_attempted:
+                fail(
+                    "Codex steer result is unknown; "
+                    "refusing to queue a possible duplicate"
+                )
+
+        try:
+            subprocess.run(
+                ["codex", "queue", "--thread", thread, "--message", content],
+                check=True,
+            )
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            fail("could not queue the Codex message")
+        return f"queued for codex:{thread}"
+
+    def peers(self):
+        try:
+            threads = self.threads()
+        except CODEX_ERRORS:
+            return []
+        return [
+            (
+                f"codex:{thread['id']}\t"
+                f"{thread.get('status', {}).get('type', 'unknown')}\t"
+                f"{thread.get('name') or thread.get('preview', '')}\t"
+                f"{thread.get('cwd')}"
+            )
+            for thread in threads
+        ]
+
+
+ADAPTERS = {
+    adapter.name: adapter
+    for adapter in (ClaudeAdapter(), CodexAdapter())
+}
+
+
+# CLI
+
+def list_peers():
+    for adapter in ADAPTERS.values():
+        for peer in adapter.peers():
+            print(peer)
+
+
+def send_message(target_spec, text):
+    try:
+        adapter_name, target = target_spec.split(":", 1)
+        adapter = ADAPTERS[adapter_name]
+    except (ValueError, KeyError):
+        fail("target must start with claude: or codex:")
+
+    canonical_target, destination = adapter.resolve(target)
+    content, receipt = prepare_message(
+        text,
+        canonical_target,
+        adapter.transforms,
+    )
+    try:
+        result = adapter.deliver(destination, content)
+    except BaseException:
+        if receipt:
+            (receipt_root() / f"{receipt}.json").unlink(missing_ok=True)
+        raise
+    print(result)
+
+
+def main():
+    parser = argparse.ArgumentParser(prog="agent-msg")
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser(
+        "peers",
+        help="list reachable Claude and Codex sessions",
+    )
+    send = commands.add_parser(
+        "send",
+        help="send to claude:TARGET or codex:TARGET",
+    )
+    send.add_argument("target")
+    send.add_argument("message", nargs="+")
+    ack = commands.add_parser(
+        "ack",
+        help="reveal a target-bound message receipt",
+    )
+    ack.add_argument("message_id")
+    args = parser.parse_args()
+
+    if args.command == "peers":
+        list_peers()
+    elif args.command == "ack":
+        acknowledge(args.message_id)
+    else:
+        send_message(args.target, " ".join(args.message))
+
+
+if __name__ == "__main__":
+    main()
