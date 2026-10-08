@@ -97,7 +97,8 @@ adding `__YYYY_MM_DD` and then `__HH_MM` only on collisions. Without a name, it 
 renames the current branch and worktree using the same ladder. Optional
 `.ctx/` contents are copied into new worktrees; executable
 `.worktree-hooks/on-create` and `on-remove` scripts run around creation and
-removal.
+removal. Removal makes owner-owned directories writable first, so read-only
+build caches cannot leave a partially removed worktree behind.
 
 ## Tool ownership
 

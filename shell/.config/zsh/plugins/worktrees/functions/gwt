@@ -66,7 +66,7 @@ case "$1" in
     ;;
   -r)
     shift
-    local worktree_path
+    local worktree_path locked_dir
     worktree_path=$(git rev-parse --show-toplevel 2>/dev/null) || {
       printf 'Error: not inside a worktree\n' >&2
       return 1
@@ -74,6 +74,9 @@ case "$1" in
     if [[ -x "$hook_dir/on-remove" ]]; then
       "$hook_dir/on-remove" "$worktree_path" || return
     fi
+    while IFS= read -r -d '' locked_dir; do
+      chmod u+w -- "$locked_dir" || return
+    done < <(find "$worktree_path" -xdev -type d -user "$EUID" ! -perm -u+w -print0)
     cd "$repo_dir" && git -C "$repo_dir/.bare" worktree remove "$@" "$worktree_path"
     ;;
   -m)
