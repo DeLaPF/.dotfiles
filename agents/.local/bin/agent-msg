@@ -87,6 +87,10 @@ def reply_transform(message):
         )
 
 
+def notification_transform(message):
+    message["headers"].append("[agent notification; no reply is expected]")
+
+
 def receipt_transform(message):
     message["receipt"] = str(uuid.uuid4())
     message["headers"].append(
@@ -387,7 +391,7 @@ def list_peers():
             print(peer)
 
 
-def send_message(target_spec, text):
+def send_message(target_spec, text, notification=False):
     try:
         adapter_name, target = target_spec.split(":", 1)
         adapter = ADAPTERS[adapter_name]
@@ -395,10 +399,14 @@ def send_message(target_spec, text):
         fail("target must start with claude: or codex:")
 
     canonical_target, destination = adapter.resolve(target)
+    transforms = tuple(
+        notification_transform if notification and transform is reply_transform else transform
+        for transform in adapter.transforms
+    )
     content, receipt = prepare_message(
         text,
         canonical_target,
-        adapter.transforms,
+        transforms,
     )
     try:
         result = adapter.deliver(destination, content)
@@ -416,12 +424,21 @@ def main():
         "peers",
         help="list reachable Claude and Codex sessions",
     )
+    commands.add_parser(
+        "self",
+        help="print the current Claude or Codex session identity",
+    )
     send = commands.add_parser(
         "send",
         help="send to claude:TARGET or codex:TARGET",
     )
     send.add_argument("target")
     send.add_argument("message", nargs="+")
+    send.add_argument(
+        "--notification",
+        action="store_true",
+        help="mark the message as a one-way notification",
+    )
     ack = commands.add_parser(
         "ack",
         help="reveal a target-bound message receipt",
@@ -431,10 +448,19 @@ def main():
 
     if args.command == "peers":
         list_peers()
+    elif args.command == "self":
+        identity = current_identity()
+        if identity == "shell":
+            fail("no current Claude or Codex session")
+        print(identity)
     elif args.command == "ack":
         acknowledge(args.message_id)
     else:
-        send_message(args.target, " ".join(args.message))
+        send_message(
+            args.target,
+            " ".join(args.message),
+            notification=args.notification,
+        )
 
 
 if __name__ == "__main__":
