@@ -77,6 +77,16 @@ reply and acknowledgement instructions, without Claude regenerating anything.
 Receipts are private runtime files, deleted after a successful acknowledgement,
 and expire after one day if never acknowledged.
 
+`agent-mcp-callback -- MCP_COMMAND ...` is a small stdio transport wrapper for
+local MCP servers. It advertises and injects the optional
+`dev.alafia/agent-callback` extension into tool calls. A supporting MCP server
+may send bounded, authenticated JSON events to the injected private Unix
+socket; the wrapper delivers them to the originating agent through
+`agent-msg`. The callback is a notification path only: it conveys no approval,
+credential, or additional tool authority. `agent-msg self` prints the current
+session identity, while `agent-msg send --notification` uses the same Claude
+and Codex transports without asking the recipient to reply.
+
 ## Worktrees
 
 The `worktrees` plugin provides `bare-clone` and `gwt` and is installed by the

@@ -1,0 +1,245 @@
+#!/usr/bin/env python3
+"""Add an agent callback capability to one local stdio MCP server."""
+
+from __future__ import annotations
+
+import argparse
+import hmac
+import json
+import os
+from pathlib import Path
+import secrets
+import shutil
+import socket
+import subprocess
+import sys
+import tempfile
+import threading
+import uuid
+
+
+EXTENSION_ID = "dev.alafia/agent-callback"
+EXTENSION_VERSION = "0.1"
+MAX_FRAME = 64 * 1024
+
+
+def fail(message: str) -> None:
+    raise SystemExit(f"agent-mcp-callback: {message}")
+
+
+def runtime_root() -> Path:
+    runtime = os.environ.get("XDG_RUNTIME_DIR")
+    root = (
+        Path(runtime) / "agent-mcp-callback"
+        if runtime
+        else Path(tempfile.gettempdir()) / f"agent-mcp-callback-{os.getuid()}"
+    )
+    root.mkdir(mode=0o700, parents=True, exist_ok=True)
+    stat = root.stat()
+    if root.is_symlink() or stat.st_uid != os.getuid() or stat.st_mode & 0o077:
+        fail(f"unsafe runtime directory {root}")
+    return root
+
+
+class CallbackServer:
+    def __init__(self, agent_msg: str, target: str):
+        self.agent_msg = agent_msg
+        self.target = target
+        self.authorization = secrets.token_urlsafe(32)
+        self.path = runtime_root() / f"{os.getpid()}-{uuid.uuid4().hex}.sock"
+        self.stop = threading.Event()
+        self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.server.bind(str(self.path))
+        self.path.chmod(0o600)
+        self.server.listen(8)
+        self.server.settimeout(0.25)
+        self.thread = threading.Thread(
+            target=self._serve,
+            name="agent-mcp-callback",
+            daemon=True,
+        )
+
+    @property
+    def capability(self) -> dict[str, object]:
+        return {
+            "version": EXTENSION_VERSION,
+            "transport": "unix",
+            "endpoint": str(self.path),
+            "authorization": self.authorization,
+        }
+
+    def start(self) -> None:
+        self.thread.start()
+
+    def close(self) -> None:
+        self.stop.set()
+        self.server.close()
+        self.thread.join(timeout=1)
+        self.path.unlink(missing_ok=True)
+
+    def _serve(self) -> None:
+        while not self.stop.is_set():
+            try:
+                connection, _ = self.server.accept()
+            except TimeoutError:
+                continue
+            except OSError:
+                return
+            self._receive(connection)
+
+    @staticmethod
+    def _reply(connection: socket.socket, value: dict[str, object]) -> None:
+        connection.sendall(json.dumps(value, separators=(",", ":")).encode() + b"\n")
+
+    def _receive(self, connection: socket.socket) -> None:
+        with connection:
+            connection.settimeout(10)
+            try:
+                stream = connection.makefile("rb")
+                raw = stream.readline(MAX_FRAME + 1)
+                if not raw or len(raw) > MAX_FRAME or not raw.endswith(b"\n"):
+                    raise ValueError("callback frame is empty, incomplete, or too large")
+                item = json.loads(raw)
+                if not isinstance(item, dict):
+                    raise ValueError("callback frame must be an object")
+                supplied = item.pop("authorization", "")
+                if not isinstance(supplied, str) or not hmac.compare_digest(
+                    supplied, self.authorization
+                ):
+                    raise ValueError("callback authorization is invalid")
+                if item.get("version") != 1 or not isinstance(item.get("event"), str):
+                    raise ValueError("callback version and event are required")
+                serialized = json.dumps(item, sort_keys=True, separators=(",", ":"))
+                result = subprocess.run(
+                    [
+                        self.agent_msg,
+                        "send",
+                        "--notification",
+                        self.target,
+                        serialized,
+                    ],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    timeout=15,
+                )
+                if result.returncode != 0:
+                    detail = result.stderr.strip() or "agent-msg delivery failed"
+                    raise RuntimeError(detail)
+                self._reply(connection, {"ok": True})
+            except (OSError, ValueError, json.JSONDecodeError, RuntimeError) as error:
+                try:
+                    self._reply(connection, {"ok": False, "error": str(error)})
+                except OSError:
+                    pass
+
+
+def current_target(agent_msg: str) -> str:
+    try:
+        result = subprocess.run(
+            [agent_msg, "self"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+        fail(f"could not resolve the current agent session: {error}")
+    target = result.stdout.strip()
+    if not target.startswith(("claude:", "codex:")) or "\n" in target:
+        fail("agent-msg returned an invalid current session")
+    return target
+
+
+def add_extension(message: dict[str, object], capability: dict[str, object]) -> None:
+    params = message.get("params")
+    if not isinstance(params, dict):
+        return
+    if message.get("method") == "initialize":
+        capabilities = params.setdefault("capabilities", {})
+        if isinstance(capabilities, dict):
+            extensions = capabilities.setdefault("extensions", {})
+            if isinstance(extensions, dict):
+                extensions[EXTENSION_ID] = {"version": EXTENSION_VERSION}
+    if message.get("method") == "tools/call":
+        metadata = params.setdefault("_meta", {})
+        if isinstance(metadata, dict):
+            metadata[EXTENSION_ID] = capability
+            client_capabilities = metadata.get(
+                "io.modelcontextprotocol/clientCapabilities"
+            )
+            if isinstance(client_capabilities, dict):
+                extensions = client_capabilities.setdefault("extensions", {})
+                if isinstance(extensions, dict):
+                    extensions[EXTENSION_ID] = {"version": EXTENSION_VERSION}
+
+
+def proxy(command: list[str], agent_msg: str) -> int:
+    target = current_target(agent_msg)
+    callback = CallbackServer(agent_msg, target)
+    callback.start()
+    try:
+        child = subprocess.Popen(
+            command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=None,
+        )
+    except OSError as error:
+        callback.close()
+        fail(f"could not start MCP server: {error}")
+
+    def copy_output() -> None:
+        assert child.stdout is not None
+        for line in child.stdout:
+            sys.stdout.buffer.write(line)
+            sys.stdout.buffer.flush()
+
+    output = threading.Thread(target=copy_output, name="mcp-output", daemon=True)
+    output.start()
+    try:
+        assert child.stdin is not None
+        for line in sys.stdin.buffer:
+            forwarded = line
+            try:
+                message = json.loads(line)
+                if isinstance(message, dict):
+                    add_extension(message, callback.capability)
+                    forwarded = (
+                        json.dumps(message, separators=(",", ":")).encode() + b"\n"
+                    )
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                pass
+            child.stdin.write(forwarded)
+            child.stdin.flush()
+        child.stdin.close()
+        return child.wait()
+    except (BrokenPipeError, KeyboardInterrupt):
+        child.terminate()
+        return child.wait()
+    finally:
+        callback.close()
+        output.join(timeout=1)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="grant a local stdio MCP server the agent callback extension"
+    )
+    parser.add_argument(
+        "--agent-msg",
+        default=shutil.which("agent-msg") or "agent-msg",
+        help="agent-msg executable used for session resolution and delivery",
+    )
+    parser.add_argument("command", nargs=argparse.REMAINDER)
+    args = parser.parse_args()
+    command = args.command
+    if command[:1] == ["--"]:
+        command = command[1:]
+    if not command:
+        parser.error("an MCP server command is required after --")
+    raise SystemExit(proxy(command, args.agent_msg))
+
+
+if __name__ == "__main__":
+    main()
