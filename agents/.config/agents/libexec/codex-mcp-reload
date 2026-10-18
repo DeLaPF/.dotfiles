@@ -1,0 +1,125 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["websocket-client==1.9.0"]
+# ///
+import argparse
+import json
+import os
+from pathlib import Path
+import socket
+
+import websocket
+
+
+class RpcError(Exception):
+    pass
+
+
+class Client:
+    def __init__(self):
+        home = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex"))
+        raw_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        raw_socket.settimeout(5)
+        try:
+            raw_socket.connect(
+                str(home / "app-server-control" / "app-server-control.sock")
+            )
+            self.socket = websocket.create_connection(
+                "ws://localhost/", socket=raw_socket, timeout=5
+            )
+            self.request_id = 0
+            self.call(
+                "initialize",
+                {
+                    "clientInfo": {
+                        "name": "dotfiles_codex_mcp_reload",
+                        "title": "Codex MCP reload",
+                        "version": "1",
+                    },
+                    "capabilities": {},
+                },
+            )
+            self.socket.send(json.dumps({"method": "initialized", "params": {}}))
+        except BaseException:
+            raw_socket.close()
+            raise
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.socket.close()
+
+    def call(self, method, params):
+        self.request_id += 1
+        self.socket.send(
+            json.dumps({"id": self.request_id, "method": method, "params": params})
+        )
+        while True:
+            message = json.loads(self.socket.recv())
+            if message.get("id") != self.request_id:
+                continue
+            if error := message.get("error"):
+                raise RpcError(error.get("message", str(error)))
+            return message["result"]
+
+
+def fail(message):
+    raise SystemExit(f"codex mcp reload: {message}")
+
+
+def main():
+    argparse.ArgumentParser(
+        prog="codex mcp reload",
+        description="Reload and verify every MCP server in the running Codex daemon",
+    ).parse_args()
+
+    try:
+        with Client() as client:
+            client.socket.settimeout(30)
+            client.call("config/mcpServer/reload", None)
+            params = {"detail": "full"}
+            thread = os.environ.get("CODEX_THREAD_ID") or os.environ.get(
+                "CODEX_SESSION_ID"
+            )
+            if thread:
+                params["threadId"] = thread
+            statuses = client.call("mcpServerStatus/list", params).get("data", [])
+    except (OSError, TimeoutError, KeyError, ValueError, RpcError,
+            websocket.WebSocketException) as error:
+        fail(str(error) or "Codex control daemon is unavailable")
+
+    if not statuses:
+        fail("the daemon reported no configured MCP servers")
+
+    failed = [
+        status
+        for status in statuses
+        if status.get("runtimeStatus") != "connected"
+        or status.get("serverInfo") is None
+        or status.get("toolsError")
+    ]
+    if failed:
+        reasons = ", ".join(
+            f"{status.get('name', '?')}: "
+            f"{status.get('toolsError') or status.get('runtimeStatus') or 'not initialized'}"
+            for status in failed
+        )
+        fail(reasons)
+
+    result = {
+        "reloaded": [
+            {
+                "name": status["name"],
+                "runtime_status": status["runtimeStatus"],
+                "tool_count": len(status.get("tools", {})),
+            }
+            for status in statuses
+        ]
+    }
+    print(json.dumps(result, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,32 @@
+#!/bin/bash
+
+real=${DOTFILES_CODEX_REAL_COMMAND:-${CODEX_HOME:-${HOME:?}/.codex}/packages/standalone/current/bin/codex}
+
+if [[ ${1-} == mcp && ${2-} == reload ]]; then
+    shift 2
+    helper=${DOTFILES_CODEX_MCP_RELOAD_COMMAND:-$(
+        CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../libexec" && pwd -P
+    )/codex-mcp-reload}
+    exec "$helper" "$@"
+fi
+
+if [[ ! -x $real ]]; then
+    echo "codex: native executable is unavailable at $real" >&2
+    exit 127
+fi
+
+case "${1-}:${2-}" in
+    -h:|--help:|help:|mcp:-h|mcp:--help|mcp:help|help:mcp)
+        if "$real" "$@"; then
+            status=0
+        else
+            status=$?
+        fi
+        if [[ $status -eq 0 ]]; then
+            printf '\nDotfiles extension:\n  mcp reload  Reload and verify all MCP servers\n'
+        fi
+        exit "$status"
+        ;;
+esac
+
+exec -a codex "$real" "$@"

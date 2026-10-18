@@ -9,6 +9,16 @@ typeset _zshenv_path_config="$HOME/.config/zsh/path.zsh"
 [[ -r "$_zshenv_path_config" ]] && source "$_zshenv_path_config"
 unset _zshenv_path_config
 
+# Opt into repository-local agent command extensions when they are present.
+# Native agent distributions remain independently owned and updateable.
+typeset _zshenv_agents="$HOME/.config/agents/shims"
+if [[ -d "$_zshenv_agents" ]]; then
+  typeset -gU path PATH
+  path=("$_zshenv_agents" $path)
+  export PATH
+fi
+unset _zshenv_agents
+
 # Load unshared, device-specific exports and PATH setup after the shared base.
 # Keep this file silent because every zsh process sources it.
 [[ -r "$HOME/.zshenv.local" ]] && source "$HOME/.zshenv.local"
